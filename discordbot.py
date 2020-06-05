@@ -16,6 +16,7 @@ async def on_command_error(ctx, error):
 
 @bot.command()
 async def t(ctx,arg):
+    await ctx.send(f"Timer set: {arg}")
     if not(arg.isdecimal()):
         await ctx.send('Error: invalid time.')
         return
