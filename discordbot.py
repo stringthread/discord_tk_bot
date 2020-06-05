@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 import os
 import traceback
@@ -5,8 +6,6 @@ import asyncio
 
 bot = commands.Bot(command_prefix='!')
 token = os.environ['DISCORD_BOT_TOKEN']
-if not discord.opus.is_loaded(): 
-    discord.opus.load_opus("heroku-buildpack-libopus")
 se_start=discord.FFmpegPCMAudio("audio/start.mp3")
 se_fin=discord.FFmpegPCMAudio("audio/fin.mp3")
 
