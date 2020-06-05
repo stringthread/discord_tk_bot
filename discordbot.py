@@ -16,16 +16,15 @@ async def on_command_error(ctx, error):
 
 @bot.command()
 async def t(ctx,arg):
-    await ctx.send(f"Timer set: {arg}")
-    await ctx.send("test")
     if not(arg.isdecimal()):
         await ctx.send('Error: invalid time.')
         return
     sec=int(arg)
-    if sec>=100:
+    if len(arg)>=3:
         sec=sec//100*60+sec%100
     else:
         sec*=60
+    await ctx.send(f"Timer set: {sec}")
     await asyncio.sleep(sec)
     await ctx.send('Finished!')
 
