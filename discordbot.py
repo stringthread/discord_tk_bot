@@ -1,8 +1,9 @@
 from discord.ext import commands
 import os
 import traceback
+import asyncio
 
-bot = commands.Bot(command_prefix='/')
+bot = commands.Bot(command_prefix='!')
 token = os.environ['DISCORD_BOT_TOKEN']
 
 
@@ -14,8 +15,17 @@ async def on_command_error(ctx, error):
 
 
 @bot.command()
-async def ping(ctx):
-    await ctx.send('pong')
+async def t(ctx,arg):
+    if not(arg.isdecimal()):
+        await ctx.send('Error: invalid time.')
+        return
+    sec=int(arg)
+    if sec>=100:
+        sec=sec//100*60+sec%100
+    else:
+        sec*=60
+    await asyncio.sleep(sec)
+    await ctx.send('Finished!')
 
 
 bot.run(token)
