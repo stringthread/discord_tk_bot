@@ -24,8 +24,6 @@ async def on_command_error(ctx, error):
 
 @bot.command()
 async def t(ctx,arg):
-    global se_start
-    global se_fin
     if not(arg.isdecimal()):
         await ctx.send('Error: invalid time.')
         return
@@ -36,12 +34,21 @@ async def t(ctx,arg):
         sec*=60
     ch=ctx.channel
     cat=ctx.guild.get_channel(ch.category_id)
-    vc_list=cat.voice_channels
-    await se(vc_list,se_start)
+#    vc_list=cat.voice_channels
+#    await se(vc_list,se_start)
+    voice_state=ctx.author.voice
+    flg_vc=not((not voice_state) or (not voice_state.channel))
+    if not flg_vc:
+        await ctx.send("You have to join a voice channnel first.")
+    else:
+        v_cl=await voice_state.channel.connect()
+        v_cl.play(se_start)
     await ctx.send(f"Timer set: {sec}")
     await asyncio.sleep(sec)
     await ctx.send('Finished!')
-    await se(vc_list,se_fin)
+#    await se(vc_list,se_fin)
+    if flg_vc:
+        v_cl.play(se_fin)
 
 
 bot.run(token)
