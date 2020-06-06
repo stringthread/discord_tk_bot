@@ -8,6 +8,7 @@ bot = commands.Bot(command_prefix='!')
 token = os.environ['DISCORD_BOT_TOKEN']
 se_start=discord.FFmpegPCMAudio("audio/start.mp3")
 se_fin=discord.FFmpegPCMAudio("audio/fin.mp3")
+v_cl=None
 
 async def se(vc_list,src):
     for ch in vc_list:
@@ -24,6 +25,7 @@ async def on_command_error(ctx, error):
 
 @bot.command()
 async def t(ctx,arg):
+    global v_cl
     if not(arg.isdecimal()):
         await ctx.send('Error: invalid time.')
         return
@@ -32,8 +34,8 @@ async def t(ctx,arg):
         sec=sec//100*60+sec%100
     else:
         sec*=60
-    ch=ctx.channel
-    cat=ctx.guild.get_channel(ch.category_id)
+#    ch=ctx.channel
+#    cat=ctx.guild.get_channel(ch.category_id)
 #    vc_list=cat.voice_channels
 #    await se(vc_list,se_start)
     voice_state=ctx.author.voice
