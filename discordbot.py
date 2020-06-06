@@ -6,8 +6,6 @@ import asyncio
 
 bot = commands.Bot(command_prefix='!')
 token = os.environ['DISCORD_BOT_TOKEN']
-se_start=discord.FFmpegPCMAudio("audio/start.mp3")
-se_fin=discord.FFmpegPCMAudio("audio/fin.mp3")
 v_cl=None
 
 async def se(vc_list,src):
@@ -42,15 +40,18 @@ async def t(ctx,arg):
     flg_vc=not((not voice_state) or (not voice_state.channel))
     if not flg_vc:
         await ctx.send("You have to join a voice channnel first.")
-    else:
+    elif v_cl==None:
         v_cl=await voice_state.channel.connect()
-        v_cl.play(se_start)
+    elif v_cl.channel!=voice_state.channel:
+        await v_cl.move_to(voice_state.channel)
+    if v_cl:
+        v_cl.play(discord.FFmpegPCMAudio("audio/start.mp3"))
     await ctx.send(f"Timer set: {sec}")
     await asyncio.sleep(sec)
     await ctx.send('Finished!')
 #    await se(vc_list,se_fin)
     if flg_vc:
-        v_cl.play(se_fin)
+        v_cl.play(discord.FFmpegPCMAudio("audio/fin.mp3"))
 
 
 bot.run(token)
