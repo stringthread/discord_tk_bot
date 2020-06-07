@@ -28,8 +28,8 @@ async def on_command_error(ctx, error):
 async def s(ctx):
     global tasks,future
     if ctx.channel.id in future:
-        dt=tasks[ctx.channel.id].when()-loop.time()
-        await ctx.send(f"Timer stopped: {dt} sec left.")
+        dt=datetime.timedelta(seconds=tasks[ctx.channel.id].when()-loop.time())
+        await ctx.send(f"Timer stopped: {dt.seconds//60} min {dt.seconds%60} sec left.")
         future[ctx.channel.id].set_result(False)
         tasks[ctx.channel.id].cancel()
         del tasks[ctx.channel.id]
@@ -40,11 +40,10 @@ async def t(ctx,arg):
     if not(arg.isdecimal()):
         await ctx.send('Error: invalid time.')
         return
-    sec=int(arg)
     if len(arg)>=3:
-        sec=sec//100*60+sec%100
+        dt=datetime.timedelta(minutes=int(arg[0:-2]),seconds=int(arg[-2:]))
     else:
-        sec*=60
+        dt=datetime.timedelta(minutes=int(arg))
 #    ch=ctx.channel
 #    cat=ctx.guild.get_channel(ch.category_id)
 #    vc_list=cat.voice_channels
@@ -59,10 +58,10 @@ async def t(ctx,arg):
         await v_cl.move_to(voice_state.channel)
     if v_cl:
         v_cl.play(discord.FFmpegPCMAudio("audio/start.mp3"))
-    await ctx.send(f"Timer set: {sec}")
+    await ctx.send(f"Timer set: {dt.seconds//60} min {dt.seconds%60} sec.")
     loop=asyncio.get_event_loop()
     future[ctx.channel.id]=loop.create_future()
-    tasks[ctx.channel.id]=loop.call_later(sec,future[ctx.channel.id].set_result,True)
+    tasks[ctx.channel.id]=loop.call_later(dt.total_seconds(),future[ctx.channel.id].set_result,True)
     await future[ctx.channel.id]
     if future[ctx.channel.id].result():
         await ctx.send('Finished!')
