@@ -19,12 +19,12 @@ async def se(vc_list,src):
     for ch in vc_list:
         if v_cl==None:
             v_cl=await ch.connect()
-        elif v_cl.channel!=ch:
+        else:
             await v_cl.move_to(ch)
         if not(loop) or loop.is_closed():
             loop=asyncio.get_event_loop()
         future=loop.create_future()
-        v_cl.play(src,after=lambda err:future.set_result(0))
+        v_cl.play(discord.FFmpegPCMAudio(src),after=lambda err:future.set_result(0))
         await future
     if ch_before!=None:
         await v_cl.move_to(ch_before)
@@ -83,14 +83,13 @@ async def t(ctx,arg_t,arg_b='No'):
         if flg_vc:
             flg_self_play=True
             if arg_b:
-                await ctx.send("arg_b==True")
                 ch=ctx.channel
                 if hasattr(ch,"category_id"):
                     cat=ctx.guild.get_channel(ch.category_id)
                     if cat!=None:
                         vc_list=cat.voice_channels
                         flg_self_play=False
-                        await se(vc_list,discord.FFmpegPCMAudio("audio/fin.mp3"))
+                        await se(vc_list,"audio/fin.mp3")
             if flg_self_play: v_cl.play(discord.FFmpegPCMAudio("audio/fin.mp3"))
         del future[ctx.channel.id]
         if ctx.channel.id in tasks:
