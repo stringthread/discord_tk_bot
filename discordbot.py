@@ -13,10 +13,21 @@ future={}
 loop=None
 
 async def se(vc_list,src):
+    global v_cl,loop
+    ch_before=None
+    if v_cl!=None: ch_before=v_cl.channel
     for ch in vc_list:
-        v_client=await ch.connect()
-        v_client.play(src)
-        await v_client.disconnect()
+        if v_cl==None:
+            v_cl=await ch.connect()
+        elif v_cl.channel!=ch:
+            await v_cl.move_to(ch)
+        if not(loop) or loop.is_closed():
+            loop=asyncio.get_event_loop()
+        future=loop.create_future()
+        v_cl.play(src,after=lambda err:future.set_result(0))
+        await future
+    if ch_before!=None:
+        await v_cl.move_to(ch_before)
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -35,15 +46,19 @@ async def s(ctx):
         del tasks[ctx.channel.id]
 
 @bot.command()
-async def t(ctx,arg):
+async def t(ctx,arg_t,arg_b=False):
     global v_cl,tasks,future,loop
-    if not(arg.isdecimal()):
+    if arg_t==None:
+        await ctx.send('Error: no time input.')
+        return
+    if not(arg_t.isdecimal()):
         await ctx.send('Error: invalid time.')
         return
-    if len(arg)>=3:
-        dt=datetime.timedelta(minutes=int(arg[0:-2]),seconds=int(arg[-2:]))
+    if len(arg_t)>=3:
+        dt=datetime.timedelta(minutes=int(arg_t[0:-2]),seconds=int(arg_t[-2:]))
     else:
-        dt=datetime.timedelta(minutes=int(arg))
+        dt=datetime.timedelta(minutes=int(arg_t))
+    if arg_b: arg_b=(arg_b in ['Y','Yes','y','yes'])
 #    ch=ctx.channel
 #    cat=ctx.guild.get_channel(ch.category_id)
 #    vc_list=cat.voice_channels
@@ -65,9 +80,17 @@ async def t(ctx,arg):
     await future[ctx.channel.id]
     if future[ctx.channel.id].result():
         await ctx.send('Finished!')
-#        await se(vc_list,se_fin)
         if flg_vc:
-            v_cl.play(discord.FFmpegPCMAudio("audio/fin.mp3"))
+            flg_self_play=True
+            if arg_b:
+                ch=ctx.channel
+                if hasattr(ch,"category_id"):
+                    cat=ctx.guild.get_channel(ch.category_id)
+                    if cat!=None:
+                        vc_list=cat.voice_channels
+                        flg_self_play=False
+                        await se(vc_list,discord.FFmpegPCMAudio("audio/fin.mp3"))
+            if flg_self_play: v_cl.play(discord.FFmpegPCMAudio("audio/fin.mp3"))
         del future[ctx.channel.id]
         if ctx.channel.id in tasks:
             del tasks[ctx.channel.id]
