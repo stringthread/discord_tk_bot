@@ -10,6 +10,7 @@ token = os.environ['DISCORD_BOT_TOKEN']
 v_cl=None
 tasks={}
 future={}
+loop=None
 
 async def se(vc_list,src):
     for ch in vc_list:
@@ -27,14 +28,15 @@ async def on_command_error(ctx, error):
 async def s(ctx):
     global tasks,future
     if ctx.channel.id in future:
-        await ctx.send("Timer stopped.")
+        dt=tasks[ctx.channel.id].when()-loop.time()
+        await ctx.send(f"Timer stopped: {dt} sec left.")
         future[ctx.channel.id].set_result(False)
         tasks[ctx.channel.id].cancel()
         del tasks[ctx.channel.id]
 
 @bot.command()
 async def t(ctx,arg):
-    global v_cl,tasks,future
+    global v_cl,tasks,future,loop
     if not(arg.isdecimal()):
         await ctx.send('Error: invalid time.')
         return
@@ -70,8 +72,6 @@ async def t(ctx,arg):
         del future[ctx.channel.id]
         if ctx.channel.id in tasks:
             del tasks[ctx.channel.id]
-    else:
-        await ctx.send('timer finished')
 
 
 bot.run(token)
