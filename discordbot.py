@@ -67,9 +67,9 @@ async def t(ctx,arg):
 #        await se(vc_list,se_fin)
         if flg_vc:
             v_cl.play(discord.FFmpegPCMAudio("audio/fin.mp3"))
-        loop.stop()
         del future[ctx.channel.id]
-        if ctx.channel.id in tasks: del tasks[ctx.channel.id]
+        if ctx.channel.id in tasks:
+            del tasks[ctx.channel.id]
     else:
         await ctx.send('timer finished')
 
