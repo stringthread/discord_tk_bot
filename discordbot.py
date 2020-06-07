@@ -46,7 +46,7 @@ async def s(ctx):
         del tasks[ctx.channel.id]
 
 @bot.command()
-async def t(ctx,arg_t,arg_b=False):
+async def t(ctx,arg_t,arg_b='No'):
     global v_cl,tasks,future,loop
     if arg_t==None:
         await ctx.send('Error: no time input.')
@@ -83,6 +83,7 @@ async def t(ctx,arg_t,arg_b=False):
         if flg_vc:
             flg_self_play=True
             if arg_b:
+                await ctx.send("arg_b==True")
                 ch=ctx.channel
                 if hasattr(ch,"category_id"):
                     cat=ctx.guild.get_channel(ch.category_id)
