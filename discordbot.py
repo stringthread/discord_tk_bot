@@ -3,16 +3,25 @@ from discord.ext import commands
 import os
 import traceback
 import asyncio
+import datetime
 
 bot = commands.Bot(command_prefix='!')
 token = os.environ['DISCORD_BOT_TOKEN']
 v_cl=None
+tasks={}
 
 async def se(vc_list,src):
     for ch in vc_list:
         v_client=await ch.connect()
         v_client.play(src)
         await v_client.disconnect()
+
+async def timeup(ctx,flg_vc,loop):
+    await ctx.send('Finished!')
+#    await se(vc_list,se_fin)
+    if flg_vc:
+        v_cl.play(discord.FFmpegPCMAudio("audio/fin.mp3"))
+    loop.stop()
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -23,7 +32,7 @@ async def on_command_error(ctx, error):
 
 @bot.command()
 async def t(ctx,arg):
-    global v_cl
+    global v_cl,tasks
     if not(arg.isdecimal()):
         await ctx.send('Error: invalid time.')
         return
@@ -47,11 +56,10 @@ async def t(ctx,arg):
     if v_cl:
         v_cl.play(discord.FFmpegPCMAudio("audio/start.mp3"))
     await ctx.send(f"Timer set: {sec}")
-    await asyncio.sleep(sec)
-    await ctx.send('Finished!')
-#    await se(vc_list,se_fin)
-    if flg_vc:
-        v_cl.play(discord.FFmpegPCMAudio("audio/fin.mp3"))
+    loop=asyncio.get_event_loop()
+    tasks[ctx.channel.id]=loop.call_later(sec,timeup,ctx,flg_vc,loop)
+    #loop.run_forever()
+    #loop.close()
 
 
 bot.run(token)
