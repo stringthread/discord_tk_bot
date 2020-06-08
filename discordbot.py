@@ -41,6 +41,9 @@ async def s(ctx):
     global tasks,future,flg_call
     if ctx.channel.id in future:
         dt=datetime.timedelta(seconds=tasks[ctx.channel.id].when()-loop.time())
+        future[ctx.channel.id].set_result(False)
+        tasks[ctx.channel.id].cancel()
+        del tasks[ctx.channel.id]
         await ctx.send(f"Timer stopped: {dt.seconds//60} min {dt.seconds%60} sec left.")
         voice_state=ctx.author.voice
         if not((not voice_state) or (not voice_state.channel)):
@@ -54,9 +57,6 @@ async def s(ctx):
                         flg_self_play=False
                         await se(vc_list,"audio/fin.mp3")
             if flg_self_play: v_cl.play(discord.FFmpegPCMAudio("audio/fin.mp3"))
-        future[ctx.channel.id].set_result(False)
-        tasks[ctx.channel.id].cancel()
-        del tasks[ctx.channel.id]
 
 @bot.command()
 async def t(ctx,arg_t,arg_b='No'):
