@@ -105,8 +105,8 @@ async def t(ctx,arg_t,arg_b='No'):
     loop=asyncio.get_event_loop()
     future[ctx.channel.id]=loop.create_future()
     tasks[ctx.channel.id]=loop.call_later(dt.total_seconds(),future[ctx.channel.id].set_result,True)
-    await future[ctx.channel.id]
-    if future[ctx.channel.id].result():
+    result_future=await future[ctx.channel.id]
+    if result_future:
         await ctx.send('Finished!')
         if flg_vc:
             flg_self_play=True
@@ -119,9 +119,8 @@ async def t(ctx,arg_t,arg_b='No'):
                         flg_self_play=False
                         await se(vc_list,"audio/fin.mp3")
             if flg_self_play: v_cl.play(discord.FFmpegPCMAudio("audio/fin.mp3"))
-        del future[ctx.channel.id]
-        if ctx.channel.id in tasks:
-            del tasks[ctx.channel.id]
+    if ctx.channel.id in future: del future[ctx.channel.id]
+    if ctx.channel.id in tasks: del tasks[ctx.channel.id]
 
 
 bot.run(token)
