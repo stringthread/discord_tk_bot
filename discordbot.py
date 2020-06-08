@@ -10,6 +10,7 @@ token = os.environ['DISCORD_BOT_TOKEN']
 v_cl=None
 tasks={}
 future={}
+flg_call={}
 loop=None
 
 async def se(vc_list,src):
@@ -37,17 +38,29 @@ async def on_command_error(ctx, error):
 
 @bot.command()
 async def s(ctx):
-    global tasks,future
+    global tasks,future,flg_call
     if ctx.channel.id in future:
         dt=datetime.timedelta(seconds=tasks[ctx.channel.id].when()-loop.time())
         await ctx.send(f"Timer stopped: {dt.seconds//60} min {dt.seconds%60} sec left.")
+        voice_state=ctx.author.voice
+        if not((not voice_state) or (not voice_state.channel)):
+            flg_self_play=True
+            if flg_call[ctx.channel.id]:
+                ch=ctx.channel
+                if hasattr(ch,"category_id"):
+                    cat=ctx.guild.get_channel(ch.category_id)
+                    if cat!=None:
+                        vc_list=cat.voice_channels
+                        flg_self_play=False
+                        await se(vc_list,"audio/fin.mp3")
+            if flg_self_play: v_cl.play(discord.FFmpegPCMAudio("audio/fin.mp3"))
         future[ctx.channel.id].set_result(False)
         tasks[ctx.channel.id].cancel()
         del tasks[ctx.channel.id]
 
 @bot.command()
 async def t(ctx,arg_t,arg_b='No'):
-    global v_cl,tasks,future,loop
+    global v_cl,tasks,future,loop,flg_call
     if arg_t==None:
         await ctx.send('Error: no time input.')
         return
@@ -58,7 +71,7 @@ async def t(ctx,arg_t,arg_b='No'):
         dt=datetime.timedelta(minutes=int(arg_t[0:-2]),seconds=int(arg_t[-2:]))
     else:
         dt=datetime.timedelta(minutes=int(arg_t))
-    if arg_b: arg_b=(arg_b in ['Y','Yes','y','yes'])
+    flg_call[ctx.channel.id]=(arg_b in ['Y','Yes','y','yes'])
 #    ch=ctx.channel
 #    cat=ctx.guild.get_channel(ch.category_id)
 #    vc_list=cat.voice_channels
@@ -82,7 +95,7 @@ async def t(ctx,arg_t,arg_b='No'):
         await ctx.send('Finished!')
         if flg_vc:
             flg_self_play=True
-            if arg_b:
+            if flg_call[ctx.channel.id]:
                 ch=ctx.channel
                 if hasattr(ch,"category_id"):
                     cat=ctx.guild.get_channel(ch.category_id)
