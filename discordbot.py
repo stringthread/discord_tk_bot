@@ -39,7 +39,7 @@ async def on_command_error(ctx, error):
 
 @bot.command()
 async def s(ctx):
-    global tasks,future,flg_call
+    global v_cl,tasks,future,flg_call
     if ctx.channel.id in future:
         dt=datetime.timedelta(seconds=tasks[ctx.channel.id].when()-loop.time())
         future[ctx.channel.id].set_result(False)
@@ -57,7 +57,19 @@ async def s(ctx):
                         vc_list=cat.voice_channels
                         flg_self_play=False
                         await se(vc_list,"audio/fin.mp3")
-            if flg_self_play: v_cl.play(discord.FFmpegPCMAudio("audio/fin.mp3"))
+            if flg_self_play:
+                flg_vc=not((not voice_state) or (not voice_state.channel))
+                if not flg_vc:
+                    await ctx.send("You have to join a voice channnel first.")
+                elif v_cl==None:
+                    v_cl=await voice_state.channel.connect()
+                else:
+                    if v_cl.is_playing(): v_cl.stop()
+                    if v_cl.channel!=voice_state.channel:
+                        await v_cl.move_to(voice_state.channel)
+                v_cl.play(discord.FFmpegPCMAudio("audio/fin.mp3"))
+    else:
+        await ctx.send("Timer is not running.")
 
 @bot.command()
 async def t(ctx,arg_t,arg_b='No'):
