@@ -21,6 +21,7 @@ async def se(vc_list,src):
         if v_cl==None:
             v_cl=await ch.connect()
         else:
+            if v_cl.is_playing(): v_cl.stop()
             await v_cl.move_to(ch)
         if not(loop) or loop.is_closed():
             loop=asyncio.get_event_loop()
@@ -82,8 +83,10 @@ async def t(ctx,arg_t,arg_b='No'):
         await ctx.send("You have to join a voice channnel first.")
     elif v_cl==None:
         v_cl=await voice_state.channel.connect()
-    elif v_cl.channel!=voice_state.channel:
-        await v_cl.move_to(voice_state.channel)
+    else:
+        if v_cl.is_playing(): v_cl.stop()
+        if v_cl.channel!=voice_state.channel:
+            await v_cl.move_to(voice_state.channel)
     if v_cl:
         v_cl.play(discord.FFmpegPCMAudio("audio/start.mp3"))
     await ctx.send(f"Timer set: {dt.seconds//60} min {dt.seconds%60} sec.")
