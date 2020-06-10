@@ -30,7 +30,7 @@ class Cog(commands.Cog):
         ch_before=None
         if self.v_cl!=None: ch_before=self.v_cl.channel
         for ch in vc_list:
-            if self.v_cl==None:
+            if self.v_cl==None or not(self.v_cl.is_connected()):
                 self.v_cl=await ch.connect()
             else:
                 if self.v_cl.is_playing(): self.v_cl.stop()
@@ -65,7 +65,7 @@ class Cog(commands.Cog):
     @commands.check(check_priv)
     async def l(self,ctx):
         if not(self.sel_bot(ctx)): return
-        if self.v_cl: self.v_cl.disconnect()
+        if self.v_cl: await self.v_cl.disconnect()
         del Cog.cat2bot[Cog.bot2cat[self.bot_id]]
         del Cog.bot2cat[self.bot_id]
 
@@ -94,7 +94,7 @@ class Cog(commands.Cog):
                     flg_vc=not((not voice_state) or (not voice_state.channel))
                     if not flg_vc:
                         await ctx.send("You have to join a voice channnel first.")
-                    elif self.v_cl==None:
+                    elif self.v_cl==None or not(self.v_cl.is_connected()):
                         self.v_cl=await voice_state.channel.connect()
                     else:
                         if self.v_cl.is_playing(): self.v_cl.stop()
@@ -127,7 +127,7 @@ class Cog(commands.Cog):
         flg_vc=not((not voice_state) or (not voice_state.channel))
         if not flg_vc:
             await ctx.send("You have to join a voice channel first.")
-        elif self.v_cl==None:
+        elif self.v_cl==None or not(self.v_cl.is_connected()):
             self.v_cl=await voice_state.channel.connect()
         else:
             if self.v_cl.is_playing(): self.v_cl.stop()
@@ -153,7 +153,7 @@ class Cog(commands.Cog):
                             flg_self_play=False
                             await self.se(vc_list,"audio/fin.mp3")
                 if flg_self_play:
-                    if self.v_cl==None:
+                    if self.v_cl==None or not(self.v_cl.is_connected()):
                         self.v_cl=await voice_state.channel.connect()
                     else:
                         if self.v_cl.is_playing(): self.v_cl.stop()
