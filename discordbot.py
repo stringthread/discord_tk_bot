@@ -48,6 +48,8 @@ class Cog(commands.Cog):
             if Cog.cat2bot[ctx.channel.category_id]!=self.bot_id:
                 return False
         else:
+            if self.bot_id in Cog.bot2cat:
+                return False
             for i in range(1,self.bot_id):
                 if not(i in Cog.bot2cat): return False
             if flg_connect:
