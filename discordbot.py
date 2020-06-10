@@ -108,9 +108,9 @@ class Cog(commands.Cog):
 
     @commands.command()
     @commands.check(check_priv)
-    async def t(self,ctx,arg_t,arg_b='No'):
+    async def t(self,ctx,arg_t=None,arg_b='No'):
         if not(self.sel_bot(ctx,True)): return
-        if arg_t==None:
+        if arg_t==None or not(arg_t.isdecimal()):
             await ctx.send('Error: no time input.')
             return
         if not(arg_t.isdecimal()):
@@ -125,6 +125,7 @@ class Cog(commands.Cog):
     #    cat=ctx.guild.get_channel(ch.category_id)
     #    vc_list=cat.voice_channels
     #    await se(vc_list,se_start)
+
         voice_state=ctx.author.voice
         flg_vc=not((not voice_state) or (not voice_state.channel))
         if not flg_vc:
