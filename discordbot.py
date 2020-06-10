@@ -37,7 +37,7 @@ class Cog(commands.Cog):
                 await self.v_cl.move_to(ch)
             if not(self.loop) or self.loop.is_closed():
                 self.loop=asyncio.get_event_loop()
-            self.future=self.loop.create_self.future()
+            self.future=self.loop.create_future()
             self.v_cl.play(discord.FFmpegPCMAudio(src),after=lambda err:self.future.set_result(0))
             await self.future
         if ch_before!=None:
@@ -130,7 +130,7 @@ class Cog(commands.Cog):
             self.v_cl.play(discord.FFmpegPCMAudio("audio/start.mp3"))
         await ctx.send(f"Timer set: {dt.seconds//60} min {dt.seconds%60} sec.")
         self.loop=asyncio.get_event_loop()
-        self.future=self.loop.create_self.future()
+        self.future=self.loop.create_future()
         self.task=self.loop.call_later(dt.total_seconds(),self.future.set_result,True)
         result_future=await self.future
         if result_future:
