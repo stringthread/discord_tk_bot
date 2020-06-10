@@ -44,18 +44,20 @@ class Cog(commands.Cog):
 
     def sel_bot(self,ctx,flg_connect=False):
         if not(ctx.guild.id in Cog.cat2bot):
-            return self.bot_id==0
+            if not(flg_connect) or self.bot_id!=0: return False
+            Cog.cat2bot[ctx.guild.id]={ctx.channel.category_id:self.bot_id}
+            Cog.bot2cat[ctx.guild.id]={self.bot_id:ctx.channel.category_id}
         if ctx.channel.category_id in Cog.cat2bot[ctx.guild.id]:
             if Cog.cat2bot[ctx.guild.id][ctx.channel.category_id]!=self.bot_id:
                 return False
         else:
+            if not(flg_connect): return False
             if self.bot_id in Cog.bot2cat[ctx.guild.id]:
                 return False
             for i in range(self.bot_id):
                 if not(i in Cog.bot2cat[ctx.guild.id]): return False
-            if flg_connect:
-                Cog.cat2bot[ctx.guild.id][ctx.channel.category_id]=self.bot_id
-                Cog.bot2cat[ctx.guild.id][self.bot_id]=ctx.channel.category_id
+            Cog.cat2bot[ctx.guild.id][ctx.channel.category_id]=self.bot_id
+            Cog.bot2cat[ctx.guild.id][self.bot_id]=ctx.channel.category_id
         return True
 
     @commands.Cog.listener()
@@ -68,7 +70,9 @@ class Cog(commands.Cog):
     @commands.check(check_priv)
     async def l(self,ctx):
         if not(self.sel_bot(ctx)): return
-        if self.v_cl[ctx.guild.id]: await self.v_cl[ctx.guild.id].disconnect()
+        if ctx.guild.id in self.v_cl and self.v_cl[ctx.guild.id]:
+            await self.v_cl[ctx.guild.id].disconnect()
+            del self.v_cl[ctx.guild.id]
         del Cog.cat2bot[ctx.guild.id][Cog.bot2cat[ctx.guild.id][self.bot_id]]
         del Cog.bot2cat[ctx.guild.id][self.bot_id]
 
