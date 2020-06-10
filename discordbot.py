@@ -43,6 +43,18 @@ class Cog(commands.Cog):
         if ch_before!=None:
             await self.v_cl.move_to(ch_before)
 
+    def sel_bot(self,ctx,flg_connect=False):
+        if ctx.channel.category_id in Cog.cat2bot:
+            if Cog.cat2bot[ctx.channel.category_id]!=self.bot_id:
+                return False
+        else:
+            for i in range(1,self.bot_id):
+                if not(i in Cog.bot2cat): return False
+            if flg_connect:
+                Cog.cat2bot[ctx.channel.category_id]=self.bot_id
+                Cog.bot2cat[self.bot_id]=ctx.channel.category_id
+        return True
+
     @commands.Cog.listener()
     async def on_command_error(self,ctx, error):
         orig_error = getattr(error, "original", error)
@@ -52,6 +64,7 @@ class Cog(commands.Cog):
     @commands.command()
     @commands.check(check_priv)
     async def l(self,ctx):
+        if not(self.sel_bot(ctx)): return
         if self.v_cl: self.v_cl.disconnect()
         del Cog.cat2bot[Cog.bot2cat[self.bot_id]]
         del Cog.bot2cat[self.bot_id]
@@ -59,6 +72,7 @@ class Cog(commands.Cog):
     @commands.command()
     @commands.check(check_priv)
     async def s(self,ctx):
+        if not(self.sel_bot(ctx)): return
         if self.future:
             dt=datetime.timedelta(seconds=self.task.when()-self.loop.time())
             self.future.set_result(False)
@@ -93,14 +107,7 @@ class Cog(commands.Cog):
     @commands.command()
     @commands.check(check_priv)
     async def t(self,ctx,arg_t,arg_b='No'):
-        if ctx.channel.category_id in Cog.cat2bot:
-            if Cog.cat2bot[ctx.channel.category_id]!=self.bot_id:
-                return
-        else:
-            for i in range(1,self.bot_id):
-                if not(i in Cog.bot2cat): return
-            Cog.cat2bot[ctx.channel.category_id]=self.bot_id
-            Cog.bot2cat[self.bot_id]=ctx.channel.category_id
+        if not(self.sel_bot(ctx,True)): return
         if arg_t==None:
             await ctx.send('Error: no time input.')
             return
