@@ -29,16 +29,16 @@ class Cog(commands.Cog):
         ch_before=None
         if self.v_cl[ctx.guild.id]!=None: ch_before=self.v_cl[ctx.guild.id].channel
         for ch in vc_list:
-            if self.v_cl[ctx.guild.id]==None or not(self.v_cl[ctx.guild.id].is_connected()):
+            if not(ctx.guild.id in self.v_cl) or self.v_cl[ctx.guild.id]==None or not(self.v_cl[ctx.guild.id].is_connected()):
                 self.v_cl[ctx.guild.id]=await ch.connect()
             else:
                 if self.v_cl[ctx.guild.id].is_playing(): self.v_cl[ctx.guild.id].stop()
                 await self.v_cl[ctx.guild.id].move_to(ch)
-            if not(self.loop[ctx.guild.id]) or self.loop[ctx.guild.id].is_closed():
+            if not(ctx.guild.id in self.loop) or not(self.loop[ctx.guild.id]) or self.loop[ctx.guild.id].is_closed():
                 self.loop[ctx.guild.id]=asyncio.get_event_loop()
-            self.future[ctx.guild.id]=self.loop[ctx.guild.id].create_future()
-            self.v_cl[ctx.guild.id].play(discord.FFmpegPCMAudio(src),after=lambda err:self.future[ctx.guild.id].set_result(0))
-            await self.future[ctx.guild.id]
+            future=self.loop[ctx.guild.id].create_future()
+            self.v_cl[ctx.guild.id].play(discord.FFmpegPCMAudio(src),after=lambda err:future.set_result(0))
+            await future
         if ch_before!=None:
             await self.v_cl[ctx.guild.id].move_to(ch_before)
 
@@ -76,7 +76,9 @@ class Cog(commands.Cog):
     @commands.check(check_priv)
     async def s(self,ctx):
         if not(self.sel_bot(ctx)): return
-        if self.future[ctx.guild.id]:
+        if ctx.guild.id in self.future and self.future[ctx.guild.id]:
+            if not(ctx.guild.id in self.loop) or not(self.loop[ctx.guild.id]) or self.loop[ctx.guild.id].is_closed():
+                self.loop[ctx.guild.id]=asyncio.get_event_loop()
             dt=datetime.timedelta(seconds=self.task[ctx.guild.id].when()-self.loop[ctx.guild.id].time())
             self.future[ctx.guild.id].set_result(False)
             self.task[ctx.guild.id].cancel()
@@ -85,7 +87,7 @@ class Cog(commands.Cog):
             voice_state=ctx.author.voice
             if not((not voice_state) or (not voice_state.channel)):
                 flg_self_play=True
-                if self.flg_call[ctx.guild.id]:
+                if ctx.guild.id in self.flg_call and self.flg_call[ctx.guild.id]:
                     ch=ctx.channel
                     if hasattr(ch,"category_id"):
                         cat=ctx.guild.get_channel(ch.category_id)
@@ -97,7 +99,7 @@ class Cog(commands.Cog):
                     flg_vc=not((not voice_state) or (not voice_state.channel))
                     if not flg_vc:
                         await ctx.send("You have to join a voice channnel first.")
-                    elif self.v_cl[ctx.guild.id]==None or not(self.v_cl[ctx.guild.id].is_connected()):
+                    elif not(ctx.guild.id in self.v_cl) or self.v_cl[ctx.guild.id]==None or not(self.v_cl[ctx.guild.id].is_connected()):
                         self.v_cl[ctx.guild.id]=await voice_state.channel.connect()
                     else:
                         if self.v_cl[ctx.guild.id].is_playing(): self.v_cl[ctx.guild.id].stop()
@@ -131,7 +133,7 @@ class Cog(commands.Cog):
         flg_vc=not((not voice_state) or (not voice_state.channel))
         if not flg_vc:
             await ctx.send("You have to join a voice channel first.")
-        elif self.v_cl[ctx.guild.id]==None or not(self.v_cl[ctx.guild.id].is_connected()):
+        elif not(ctx.guild.id in self.v_cl) or self.v_cl[ctx.guild.id]==None or not(self.v_cl[ctx.guild.id].is_connected()):
             self.v_cl[ctx.guild.id]=await voice_state.channel.connect()
         else:
             if self.v_cl[ctx.guild.id].is_playing(): self.v_cl[ctx.guild.id].stop()
@@ -145,10 +147,11 @@ class Cog(commands.Cog):
         self.task[ctx.guild.id]=self.loop[ctx.guild.id].call_later(dt.total_seconds(),self.future[ctx.guild.id].set_result,True)
         result_future=await self.future[ctx.guild.id]
         if result_future:
-            await ctx.send('Finished!')
-            if flg_vc:
+            await ctx.send('Finished!')    
+            voice_state=ctx.author.voice
+            if not((not voice_state) or (not voice_state.channel)):
                 flg_self_play=True
-                if self.flg_call[ctx.guild.id]:
+                if ctx.guild.id in self.flg_call and self.flg_call[ctx.guild.id]:
                     ch=ctx.channel
                     if hasattr(ch,"category_id"):
                         cat=ctx.guild.get_channel(ch.category_id)
@@ -157,7 +160,7 @@ class Cog(commands.Cog):
                             flg_self_play=False
                             await self.se(ctx,vc_list,"audio/fin.mp3")
                 if flg_self_play:
-                    if self.v_cl[ctx.guild.id]==None or not(self.v_cl[ctx.guild.id].is_connected()):
+                    if not(ctx.guild.id in self.v_cl) or self.v_cl[ctx.guild.id]==None or not(self.v_cl[ctx.guild.id].is_connected()):
                         self.v_cl[ctx.guild.id]=await voice_state.channel.connect()
                     else:
                         if self.v_cl[ctx.guild.id].is_playing(): self.v_cl[ctx.guild.id].stop()
