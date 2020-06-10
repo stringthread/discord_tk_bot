@@ -18,8 +18,8 @@ async def check_priv(ctx):
 class Cog(commands.Cog):
     bot: commands.Bot
     bot_id: int
-    cat2bot: ClassVar[Dict[int,int]]={} #Category_id->Bot id
-    bot2cat: ClassVar[Dict[int,int]]={} #Bot_id->Category_id. (Can use for checking if bot is used)
+    cat2bot: ClassVar[Dict[int,Dict[int,int]]]={} #Guild_id->[Category_id->Bot id]
+    bot2cat: ClassVar[Dict[int,Dict[int,int]]]={} #Guild_id->[Bot_id->Category_id] (Can use for checking if bot is used)
     v_cl=None
     task=None
     future=None
@@ -44,17 +44,19 @@ class Cog(commands.Cog):
             await self.v_cl.move_to(ch_before)
 
     def sel_bot(self,ctx,flg_connect=False):
-        if ctx.channel.category_id in Cog.cat2bot:
-            if Cog.cat2bot[ctx.channel.category_id]!=self.bot_id:
+        if not(ctx.guild.id in Cog.cat2bot):
+            return self.bot_id==0
+        if ctx.channel.category_id in Cog.cat2bot[ctx.guild.id]:
+            if Cog.cat2bot[ctx.guild.id][ctx.channel.category_id]!=self.bot_id:
                 return False
         else:
-            if self.bot_id in Cog.bot2cat:
+            if self.bot_id in Cog.bot2cat[ctx.guild.id]:
                 return False
-            for i in range(1,self.bot_id):
-                if not(i in Cog.bot2cat): return False
+            for i in range(self.bot_id):
+                if not(i in Cog.bot2cat[ctx.guild.id]): return False
             if flg_connect:
-                Cog.cat2bot[ctx.channel.category_id]=self.bot_id
-                Cog.bot2cat[self.bot_id]=ctx.channel.category_id
+                Cog.cat2bot[ctx.guild.id][ctx.channel.category_id]=self.bot_id
+                Cog.bot2cat[ctx.guild.id][self.bot_id]=ctx.channel.category_id
         return True
 
     @commands.Cog.listener()
@@ -68,8 +70,8 @@ class Cog(commands.Cog):
     async def l(self,ctx):
         if not(self.sel_bot(ctx)): return
         if self.v_cl: await self.v_cl.disconnect()
-        del Cog.cat2bot[Cog.bot2cat[self.bot_id]]
-        del Cog.bot2cat[self.bot_id]
+        del Cog.cat2bot[ctx.guild.id][Cog.bot2cat[ctx.guild.id][self.bot_id]]
+        del Cog.bot2cat[ctx.guild.id][self.bot_id]
 
     @commands.command()
     @commands.check(check_priv)
