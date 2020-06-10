@@ -59,11 +59,11 @@ class Cog(commands.Cog):
     @commands.command()
     @commands.check(check_priv)
     async def s(self,ctx):
-        if ctx.channel.id in self.future:
+        if self.future:
             dt=datetime.timedelta(seconds=self.task.when()-self.loop.time())
             self.future.set_result(False)
             self.task.cancel()
-            del self.task
+            self.task=None
             await ctx.send(f"Timer stopped: {dt.seconds//60} min {dt.seconds%60} sec left.")
             voice_state=ctx.author.voice
             if not((not voice_state) or (not voice_state.channel)):
@@ -153,8 +153,8 @@ class Cog(commands.Cog):
                         if self.v_cl.channel!=voice_state.channel:
                             await self.v_cl.move_to(voice_state.channel)
                     self.v_cl.play(discord.FFmpegPCMAudio("audio/fin.mp3"))
-        if ctx.channel.id in self.future: del self.future
-        if ctx.channel.id in self.task: del self.task
+        if self.future: self.future=None
+        if self.task: self.task=None
 
 loop=asyncio.get_event_loop()
 for i in range(N_BOTS):
