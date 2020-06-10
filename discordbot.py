@@ -156,6 +156,9 @@ class Cog(commands.Cog):
         if ctx.channel.id in self.future: del self.future
         if ctx.channel.id in self.task: del self.task
 
+loop=asyncio.get_event_loop()
 for i in range(N_BOTS):
     bot[i].add_cog(Cog(bot=bot[i],bot_id=i))
-    bot[i].run(token[i])
+    loop.run_until_complete(bot[i].login(token[i]))
+    loop.create_task(bot[i].connect())
+loop.run_forever()
