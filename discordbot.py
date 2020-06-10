@@ -9,7 +9,7 @@ import datetime
 
 N_BOTS=2
 bot = [commands.Bot(command_prefix='!') for i in range(N_BOTS)]
-token = [os.environ['DISCORD_BOT_TOKEN'],os.environ['DISCORD_BOT_TOKEN_2']]
+token = [os.environ['DISCORD_BOT_TOKEN_'+str(i)] for i in range(1,N_BOTS+1)]
 
 async def check_priv(ctx):
     return True
