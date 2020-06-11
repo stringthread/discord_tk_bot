@@ -5,6 +5,7 @@ import traceback
 from typing import ClassVar,Dict,List
 import asyncio
 import datetime
+import re
 
 N_BOTS=2
 bot = [commands.Bot(command_prefix='!') for i in range(N_BOTS)]
@@ -79,11 +80,17 @@ class Cog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reaction_add(self,reaction,user):
-        if not(check_priv_user(user)): return
-        if not(reaction.message.content.startswith(Cog.prefix_ui)): return
-        e_name=reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name
-        if not(e_name in self.emoji_func): return
-        await self.emoji_func[e_name](reaction.message.guild,reaction.message.channel,user)
+        try:
+            if not(check_priv_user(user)): return
+            if not(reaction.message.content.startswith(Cog.prefix_ui)): return
+            e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
+            await reaction.message.channel.send(ord(e_name))
+            if not(e_name in self.emoji_func): return
+            await self.emoji_func[e_name](reaction.message.guild,reaction.message.channel,user)
+        except Exception as error:
+            orig_error = getattr(error, "original", error)
+            error_msg = ''.join(traceback.TracebackException.from_exception(orig_error).format())
+            await reaction.message.channel.send(error_msg)
 
     @commands.Cog.listener()
     async def on_command_error(self,ctx, error):
