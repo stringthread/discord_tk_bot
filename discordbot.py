@@ -21,6 +21,25 @@ class Cog(commands.Cog):
     cat2bot: ClassVar[Dict[int,Dict[int,int]]]={} #Guild_id->[Category_id->Bot id]
     bot2cat: ClassVar[Dict[int,Dict[int,int]]]={} #Guild_id->[Bot_id->Category_id] (Can use for checking if bot is used)
     prefix_ui: str='>Discord TK Bot UI:'
+    emoji_syn={
+        'one':'one',
+        '1️⃣':'one',
+        'two':'two',
+        '2️⃣':'two',
+        'three':'three',
+        '3️⃣':'three',
+        'four':'four',
+        '4️⃣':'four',
+        'six':'six',
+        '6️⃣':'six',
+        'loudspeaker':'loudspeaker',
+        '📢':'loudspeaker',
+        'regional_indicator_a':'regional_indicator_a',
+        'regional_indicator_n':'regional_indicator_n',
+        'pause_button':'pause_button',
+        'double_vertical_bar':'pause_button',
+        '⏸':'pause_button'
+    }
     def __init__(self,bot,bot_id):
         self.bot: commands.Bot=bot
         self.bot_id: int=bot_id
@@ -39,8 +58,7 @@ class Cog(commands.Cog):
             #'regional_indicator_a': lambda g,c,u:self.t_in(g,c,u,self.left_time[g.id][0]),
             #'regional_indicator_n': lambda g,c,u:self.t_in(g,c,u,self.left_time[g.id][1]),
             'loudspeaker': lambda g,c,u:self.t_in(g,c,u,'0',flg_call_start=False),
-            'pause_button': lambda g,c,u:self.s_in(g,c,u),
-            'double_vertical_bar': lambda g,c,u:self.s_in(g,c,u)
+            'pause_button': lambda g,c,u:self.s_in(g,c,u)
         }
 
     async def se(self,guild_id,vc_list,src):
@@ -84,9 +102,9 @@ class Cog(commands.Cog):
             if not(check_priv_user(user)): return
             if not(reaction.message.content.startswith(Cog.prefix_ui)): return
             e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
-            await reaction.message.channel.send(ord(e_name))
-            if not(e_name in self.emoji_func): return
-            await self.emoji_func[e_name](reaction.message.guild,reaction.message.channel,user)
+            await reaction.message.channel.send(Cog.emoji_syn[e_name])
+            if not(e_name in Cog.emoji_syn): return
+            await self.emoji_func[Cog.emoji_syn[e_name]](reaction.message.guild,reaction.message.channel,user)
         except Exception as error:
             orig_error = getattr(error, "original", error)
             error_msg = ''.join(traceback.TracebackException.from_exception(orig_error).format())
