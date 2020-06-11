@@ -219,7 +219,7 @@ class Cog(commands.Cog):
             if self.v_cl[guild.id].channel!=voice_state.channel:
                 await self.v_cl[guild.id].move_to(voice_state.channel)
         if flg_call_start:
-            if self.v_cl[guild.id]:
+            if guild.id in self.v_cl and self.v_cl[guild.id]:
                 self.v_cl[guild.id].play(discord.FFmpegPCMAudio("audio/start.mp3"))
             await ch.send(f"Timer set: {dt.seconds//60} min {dt.seconds%60} sec.")
         self.loop[guild.id]=asyncio.get_event_loop()
