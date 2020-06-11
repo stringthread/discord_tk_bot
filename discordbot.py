@@ -72,7 +72,7 @@ class Cog(commands.Cog):
 
     async def se(self,guild_id,vc_list,src):
         ch_before=None
-        if self.v_cl[guild_id]!=None: ch_before=self.v_cl[guild_id].channel
+        if guild_id in self.v_cl and self.v_cl[guild_id]!=None: ch_before=self.v_cl[guild_id].channel
         for ch in vc_list:
             if not(guild_id in self.v_cl) or self.v_cl[guild_id]==None or not(self.v_cl[guild_id].is_connected()):
                 self.v_cl[guild_id]=await ch.connect()
@@ -175,7 +175,6 @@ class Cog(commands.Cog):
                         flg_self_play=False
                         await self.se(guild.id,vc_list,"audio/fin.mp3")
                 if flg_self_play:
-                    flg_vc=not((not voice_state) or (not voice_state.channel))
                     if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
                         self.v_cl[guild.id]=await voice_state.channel.connect()
                     else:
