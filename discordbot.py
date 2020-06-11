@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import os
 import traceback
-from typing import ClassVar,Dict
+from typing import ClassVar,Dict,List
 import asyncio
 import datetime
 
@@ -28,7 +28,19 @@ class Cog(commands.Cog):
         self.future: Dict[int,asyncio.Future]={}
         self.flg_call: Dict[int,bool]={}
         self.loop: Dict[int,asyncio.BaseEventLoop]={}
-        self.emoji_func={}
+        self.left_time: Dict[int,List[int]]={}
+        self.emoji_func={
+            'one': lambda g,c,u:self.t_in(g,c,u,'1'),
+            'two': lambda g,c,u:self.t_in(g,c,u,'2'),
+            'three': lambda g,c,u:self.t_in(g,c,u,'3'),
+            'four': lambda g,c,u:self.t_in(g,c,u,'4'),
+            'six': lambda g,c,u:self.t_in(g,c,u,'6'),
+            #'regional_indicator_a': lambda g,c,u:self.t_in(g,c,u,self.left_time[g.id][0]),
+            #'regional_indicator_n': lambda g,c,u:self.t_in(g,c,u,self.left_time[g.id][1]),
+            'loudspeaker': lambda g,c,u:self.t_in(g,c,u,'0',flg_call_start=False),
+            'pause_button': lambda g,c,u:self.s_in(g,c,u),
+            'double_vertical_bar': lambda g,c,u:self.s_in(g,c,u)
+        }
 
     async def se(self,guild_id,vc_list,src):
         ch_before=None
@@ -69,8 +81,9 @@ class Cog(commands.Cog):
     async def on_reaction_add(self,reaction,user):
         if not(check_priv_user(user)): return
         if not(reaction.message.content.startswith(Cog.prefix_ui)): return
-        if not(reaction.emoji.name in self.emoji_func): return
-        await self.emoji_func[reaction.emoji.name]()
+        e_name=reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name
+        if not(e_name in self.emoji_func): return
+        await self.emoji_func[e_name](reaction.message.guild,reaction.message.channel,user)
 
     @commands.Cog.listener()
     async def on_command_error(self,ctx, error):
@@ -129,7 +142,7 @@ class Cog(commands.Cog):
     async def s(self,ctx):
         await self.s_in(ctx.guild,ctx.channel,ctx.author)
 
-    async def t_in(self,guild,ch,author,arg_t,arg_b):
+    async def t_in(self,guild,ch,author,arg_t,arg_b='No',flg_call_start=True):
         if not(self.sel_bot(guild.id,ch.category_id,True)): return
         if arg_t==None or not(arg_t.isdecimal()):
             await ch.send('Error: no time input.')
@@ -157,9 +170,10 @@ class Cog(commands.Cog):
             if self.v_cl[guild.id].is_playing(): self.v_cl[guild.id].stop()
             if self.v_cl[guild.id].channel!=voice_state.channel:
                 await self.v_cl[guild.id].move_to(voice_state.channel)
-        if self.v_cl[guild.id]:
-            self.v_cl[guild.id].play(discord.FFmpegPCMAudio("audio/start.mp3"))
-        await ch.send(f"Timer set: {dt.seconds//60} min {dt.seconds%60} sec.")
+        if flg_call_start:
+            if self.v_cl[guild.id]:
+                self.v_cl[guild.id].play(discord.FFmpegPCMAudio("audio/start.mp3"))
+            await ch.send(f"Timer set: {dt.seconds//60} min {dt.seconds%60} sec.")
         self.loop[guild.id]=asyncio.get_event_loop()
         self.future[guild.id]=self.loop[guild.id].create_future()
         self.task[guild.id]=self.loop[guild.id].call_later(dt.total_seconds(),self.future[guild.id].set_result,True)
