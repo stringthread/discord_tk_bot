@@ -115,7 +115,10 @@ class Cog(commands.Cog):
                 await reaction.message.channel.send(e_name.encode())
                 return
             await reaction.message.channel.send(Cog.emoji_syn[e_name])
+            await reaction.remove(user)
             await self.emoji_func[Cog.emoji_syn[e_name]](reaction.message.guild,reaction.message.channel,user)
+        except discord.Forbidden:
+            await reaction.message.channel.send("Error: the Bot does not have the manage_messages permission.")
         except Exception as error:
             orig_error = getattr(error, "original", error)
             error_msg = ''.join(traceback.TracebackException.from_exception(orig_error).format())
