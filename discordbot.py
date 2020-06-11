@@ -176,9 +176,7 @@ class Cog(commands.Cog):
                         await self.se(guild.id,vc_list,"audio/fin.mp3")
                 if flg_self_play:
                     flg_vc=not((not voice_state) or (not voice_state.channel))
-                    if not flg_vc:
-                        await ch.send("You have to join a voice channnel first.")
-                    elif not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
+                    if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
                         self.v_cl[guild.id]=await voice_state.channel.connect()
                     else:
                         if self.v_cl[guild.id].is_playing(): self.v_cl[guild.id].stop()
@@ -222,7 +220,7 @@ class Cog(commands.Cog):
             if self.v_cl[guild.id].channel!=voice_state.channel:
                 await self.v_cl[guild.id].move_to(voice_state.channel)
         if flg_call_start:
-            if guild.id in self.v_cl and self.v_cl[guild.id]:
+            if guild.id in self.v_cl and self.v_cl[guild.id].is_connected():
                 self.v_cl[guild.id].play(discord.FFmpegPCMAudio("audio/start.mp3"))
             await ch.send(f"Timer set: {dt.seconds//60} min {dt.seconds%60} sec.")
         self.loop[guild.id]=asyncio.get_event_loop()
