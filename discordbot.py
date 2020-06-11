@@ -6,6 +6,7 @@ from typing import ClassVar,Dict,List
 import asyncio
 import datetime
 import re
+import textwrap
 
 N_BOTS=2
 bot = [commands.Bot(command_prefix='!') for i in range(N_BOTS)]
@@ -34,12 +35,20 @@ class Cog(commands.Cog):
         '6️⃣':'six',
         'loudspeaker':'loudspeaker',
         '📢':'loudspeaker',
-        'regional_indicator_a':'regional_indicator_a',
-        'regional_indicator_n':'regional_indicator_n',
+        #'regional_indicator_a':'regional_indicator_a',
+        #b'\xf0\x9f\x87\xa6'.decode():'regional_indicator_a',
+        #'regional_indicator_n':'regional_indicator_n',
+        #b'\xf0\x9f\x87\xb3'.decode():'regional_indicator_n',
         'pause_button':'pause_button',
         'double_vertical_bar':'pause_button',
-        '⏸':'pause_button'
+        b'\xe2\x8f\xb8\xef\xb8\x8f'.decode():'pause_button'
     }
+    emoji_list=['1️⃣','2️⃣','3️⃣','4️⃣','6️⃣',
+        b'\xe2\x8f\xb8\xef\xb8\x8f'.decode(),
+        '📢',
+        #b'\xf0\x9f\x87\xa6'.decode(),
+        #b'\xf0\x9f\x87\xb3'.decode()
+    ]
     def __init__(self,bot,bot_id):
         self.bot: commands.Bot=bot
         self.bot_id: int=bot_id
@@ -99,11 +108,13 @@ class Cog(commands.Cog):
     @commands.Cog.listener()
     async def on_reaction_add(self,reaction,user):
         try:
-            if not(check_priv_user(user)): return
+            if not(check_priv_user(user)) or user.bot: return
             if not(reaction.message.content.startswith(Cog.prefix_ui)): return
             e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
+            if not(e_name in Cog.emoji_syn):
+                await reaction.message.channel.send(e_name.encode())
+                return
             await reaction.message.channel.send(Cog.emoji_syn[e_name])
-            if not(e_name in Cog.emoji_syn): return
             await self.emoji_func[Cog.emoji_syn[e_name]](reaction.message.guild,reaction.message.channel,user)
         except Exception as error:
             orig_error = getattr(error, "original", error)
@@ -115,6 +126,18 @@ class Cog(commands.Cog):
         orig_error = getattr(error, "original", error)
         error_msg = ''.join(traceback.TracebackException.from_exception(orig_error).format())
         await ctx.send(error_msg)
+
+    @commands.command()
+    @commands.check(check_priv)
+    async def c(self,ctx):
+        content=Cog.prefix_ui+textwrap.dedent('''
+        :one:～:six:：タイマー開始
+        :pause_button:：タイマー停止
+        :loudspeaker:：準備室の呼び出し
+        ''')
+        msg=await ctx.send(content)
+        for i in Cog.emoji_list:
+            await msg.add_reaction(i)
 
     async def l_in(self,guild_id,cat_id):
         if not(self.sel_bot(guild_id,cat_id)): return
