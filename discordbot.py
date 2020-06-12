@@ -138,6 +138,7 @@ class Cog(commands.Cog):
     @commands.command()
     @commands.check(check_priv)
     async def c(self,ctx):
+        if not(self.sel_bot(ctx.guild.id,ctx.channel.category_id)): return
         content=Cog.prefix_ui+textwrap.dedent('''
         :one:～:six:：タイマー開始
         :pause_button:：タイマー停止
