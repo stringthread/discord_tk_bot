@@ -113,6 +113,7 @@ class Cog(commands.Cog):
     @commands.Cog.listener()
     async def on_reaction_add(self,reaction,user):
         try:
+            if not(self.sel_bot(reaction.message.guild.id,reaction.message.channel.category_id)): return
             if not(check_priv_user(user)) or user.bot: return
             if not(reaction.message.content.startswith(Cog.prefix_ui)): return
             e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
@@ -138,7 +139,7 @@ class Cog(commands.Cog):
     @commands.command()
     @commands.check(check_priv)
     async def c(self,ctx):
-        if not(self.sel_bot(ctx.guild.id,ctx.channel.category_id)): return
+        if not(self.sel_bot(ctx.guild.id,ctx.channel.category_id,True)): return
         content=Cog.prefix_ui+textwrap.dedent('''
         :one:～:six:：タイマー開始
         :pause_button:：タイマー停止
