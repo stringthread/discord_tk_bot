@@ -75,6 +75,11 @@ class Cog(commands.Cog):
         if guild_id in self.v_cl and self.v_cl[guild_id]!=None: ch_before=self.v_cl[guild_id].channel
         for ch in vc_list:
             if not(guild_id in self.v_cl) or self.v_cl[guild_id]==None or not(self.v_cl[guild_id].is_connected()):
+                for v_cl in self.bot.voice_clients:
+                    if v_cl.guild.id==guild_id:
+                        self.v_cl[guild_id]=v_cl
+                        break
+            if not(guild_id in self.v_cl) or self.v_cl[guild_id]==None or not(self.v_cl[guild_id].is_connected()):
                 self.v_cl[guild_id]=await ch.connect()
             else:
                 if self.v_cl[guild_id].is_playing(): self.v_cl[guild_id].stop()
@@ -176,6 +181,11 @@ class Cog(commands.Cog):
                         await self.se(guild.id,vc_list,"audio/fin.mp3")
                 if flg_self_play:
                     if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
+                        for v_cl in self.bot.voice_clients:
+                            if v_cl.guild.id==guild.id:
+                                self.v_cl[guild.id]=v_cl
+                                break
+                    if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
                         self.v_cl[guild.id]=await voice_state.channel.connect()
                     else:
                         if self.v_cl[guild.id].is_playing(): self.v_cl[guild.id].stop()
@@ -213,6 +223,11 @@ class Cog(commands.Cog):
         if not flg_vc:
             await ch.send("You have to join a voice channel first.")
         elif not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
+            for v_cl in self.bot.voice_clients:
+                if v_cl.guild.id==guild.id:
+                    self.v_cl[guild.id]=v_cl
+                    break
+        if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
             self.v_cl[guild.id]=await voice_state.channel.connect()
         else:
             if self.v_cl[guild.id].is_playing(): self.v_cl[guild.id].stop()
@@ -238,6 +253,11 @@ class Cog(commands.Cog):
                         flg_self_play=False
                         await self.se(guild.id,vc_list,"audio/fin.mp3")
                 if flg_self_play:
+                    if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
+                        for v_cl in self.bot.voice_clients:
+                            if v_cl.guild.id==guild.id:
+                                self.v_cl[guild.id]=v_cl
+                                break
                     if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
                         self.v_cl[guild.id]=await voice_state.channel.connect()
                     else:
