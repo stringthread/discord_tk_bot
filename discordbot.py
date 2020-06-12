@@ -70,7 +70,7 @@ class Cog(commands.Cog):
             'six': lambda g,c,u:self.t_in(g,c,u,'6'),
             #'regional_indicator_a': lambda g,c,u:self.t_in(g,c,u,self.left_time[g.id][0]),
             #'regional_indicator_n': lambda g,c,u:self.t_in(g,c,u,self.left_time[g.id][1]),
-            'loudspeaker': lambda g,c,u:self.t_in(g,c,u,'0',flg_call_start=False),
+            'loudspeaker': lambda g,c,u:self.t_in(g,c,u,'0','Y',flg_call_start=False),
             'pause_button': lambda g,c,u:self.s_in(g,c,u)
         }
 
@@ -133,6 +133,7 @@ class Cog(commands.Cog):
                     match=re.search(r'(\d+) *min *(\d+) *sec',reaction.message.content)
                     if match==None: return
                     m,s=map(int,match.groups())
+                    await reaction.remove(user)
                     await self.t_in(reaction.message.guild,reaction.message.channel,user,f'{m}{s:02}')
         except discord.Forbidden:
             await reaction.message.channel.send("Error: the Bot does not have the manage_messages permission.")
