@@ -122,9 +122,9 @@ class Cog(commands.Cog):
             if reaction.message.content.startswith(Cog.prefix_ui):
                 e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
                 if not(e_name in Cog.emoji_syn and self.emoji_func[Cog.emoji_syn[e_name]]):
-                    await reaction.message.channel.send(e_name.encode())
+                    #await reaction.message.channel.send(e_name.encode())
                     return
-                await reaction.message.channel.send(Cog.emoji_syn[e_name])
+                #await reaction.message.channel.send(Cog.emoji_syn[e_name])
                 await reaction.remove(user)
                 await self.emoji_func[Cog.emoji_syn[e_name]](reaction.message.guild,reaction.message.channel,user)
             elif reaction.message.content.startswith(Cog.prefix_s):
@@ -140,13 +140,17 @@ class Cog(commands.Cog):
         except Exception as error:
             orig_error = getattr(error, "original", error)
             error_msg = ''.join(traceback.TracebackException.from_exception(orig_error).format())
-            await reaction.message.channel.send(error_msg)
+            #await reaction.message.channel.send(error_msg)
+            await reaction.message.channel.send(f"{datetime.datetime.now()}: Error occured. Please check system logs and contact the developper.")
+            print(error_msg)
 
     @commands.Cog.listener()
     async def on_command_error(self,ctx, error):
         orig_error = getattr(error, "original", error)
         error_msg = ''.join(traceback.TracebackException.from_exception(orig_error).format())
-        await ctx.send(error_msg)
+        #await ctx.send(error_msg)
+        await ctx.send(f"{datetime.datetime.now()}: Error occured. Please check system logs and contact the developper.")
+        print(error_msg)
 
     @commands.command()
     @commands.check(check_priv)
