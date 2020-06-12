@@ -70,7 +70,7 @@ class Cog(commands.Cog):
             'six': lambda g,c,u:self.t_in(g,c,u,'6'),
             #'regional_indicator_a': lambda g,c,u:self.t_in(g,c,u,self.left_time[g.id][0]),
             #'regional_indicator_n': lambda g,c,u:self.t_in(g,c,u,self.left_time[g.id][1]),
-            'loudspeaker': lambda g,c,u:self.t_in(g,c,u,'0','Y',flg_call_start=False),
+            'loudspeaker': lambda g,c,u:self.t_in(g,c,u,'0','Y',flg_loudspeaker=True),
             'pause_button': lambda g,c,u:self.s_in(g,c,u)
         }
 
@@ -215,7 +215,7 @@ class Cog(commands.Cog):
     async def s(self,ctx):
         await self.s_in(ctx.guild,ctx.channel,ctx.author)
 
-    async def t_in(self,guild,ch,author,arg_t,arg_b='No',flg_call_start=True):
+    async def t_in(self,guild,ch,author,arg_t,arg_b='No',flg_loudspeaker=False):
         if not(self.sel_bot(guild.id,ch.category_id,True)): return
         if arg_t==None or not(arg_t.isdecimal()):
             await ch.send('Error: no time input.')
@@ -248,7 +248,7 @@ class Cog(commands.Cog):
             if self.v_cl[guild.id].is_playing(): self.v_cl[guild.id].stop()
             if self.v_cl[guild.id].channel!=voice_state.channel:
                 await self.v_cl[guild.id].move_to(voice_state.channel)
-        if flg_call_start:
+        if not(flg_loudspeaker):
             if guild.id in self.v_cl and self.v_cl[guild.id].is_connected():
                 self.v_cl[guild.id].play(discord.FFmpegPCMAudio("audio/start.mp3"))
             await ch.send(f"Timer set: {dt.seconds//60} min {dt.seconds%60} sec.")
@@ -257,7 +257,7 @@ class Cog(commands.Cog):
         self.task[guild.id]=self.loop[guild.id].call_later(dt.total_seconds(),self.future[guild.id].set_result,True)
         result_future=await self.future[guild.id]
         if result_future:
-            await ch.send('Finished!')    
+            if not(flg_loudspeaker): await ch.send('Finished!')    
             voice_state=author.voice
             if not((not voice_state) or (not voice_state.channel)):
                 flg_self_play=True
@@ -265,6 +265,7 @@ class Cog(commands.Cog):
                     cat=guild.get_channel(ch.category_id)
                     if cat!=None:
                         vc_list=cat.voice_channels
+                        if flg_loudspeaker: vc_list=list(filter(lambda vc:vc!=voice_state.channel,vc_list))
                         flg_self_play=False
                         await self.se(guild.id,vc_list,"audio/fin.mp3")
                 if flg_self_play:
