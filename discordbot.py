@@ -22,6 +22,7 @@ class Cog(commands.Cog):
     cat2bot: ClassVar[Dict[int,Dict[int,int]]]={} #Guild_id->[Category_id->Bot id]
     bot2cat: ClassVar[Dict[int,Dict[int,int]]]={} #Guild_id->[Bot_id->Category_id] (Can use for checking if bot is used)
     prefix_ui: str='>Discord TK Bot UI:'
+    prefix_s: str='Timer stopped:'
     emoji_syn={
         'one':'one',
         '1️⃣':'one',
@@ -41,7 +42,10 @@ class Cog(commands.Cog):
         #b'\xf0\x9f\x87\xb3'.decode():'regional_indicator_n',
         'pause_button':'pause_button',
         'double_vertical_bar':'pause_button',
-        b'\xe2\x8f\xb8\xef\xb8\x8f'.decode():'pause_button'
+        b'\xe2\x8f\xb8\xef\xb8\x8f'.decode():'pause_button',
+        'play':'play',
+        'arrow_forward':'play',
+        '▶️':'play'
     }
     emoji_list=['1️⃣','2️⃣','3️⃣','4️⃣','6️⃣',
         b'\xe2\x8f\xb8\xef\xb8\x8f'.decode(),
@@ -115,14 +119,21 @@ class Cog(commands.Cog):
         try:
             if not(self.sel_bot(reaction.message.guild.id,reaction.message.channel.category_id)): return
             if not(check_priv_user(user)) or user.bot: return
-            if not(reaction.message.content.startswith(Cog.prefix_ui)): return
-            e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
-            if not(e_name in Cog.emoji_syn):
-                await reaction.message.channel.send(e_name.encode())
-                return
-            await reaction.message.channel.send(Cog.emoji_syn[e_name])
-            await reaction.remove(user)
-            await self.emoji_func[Cog.emoji_syn[e_name]](reaction.message.guild,reaction.message.channel,user)
+            if reaction.message.content.startswith(Cog.prefix_ui):
+                e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
+                if not(e_name in Cog.emoji_syn and self.emoji_func[Cog.emoji_syn[e_name]]):
+                    await reaction.message.channel.send(e_name.encode())
+                    return
+                await reaction.message.channel.send(Cog.emoji_syn[e_name])
+                await reaction.remove(user)
+                await self.emoji_func[Cog.emoji_syn[e_name]](reaction.message.guild,reaction.message.channel,user)
+            elif reaction.message.content.startswith(Cog.prefix_s):
+                e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
+                if e_name in Cog.emoji_syn and Cog.emoji_syn[e_name]=='play':
+                    match=re.search(r'(\d+) *min *(\d+) *sec',reaction.message.content)
+                    if match==None: return
+                    m,s=map(int,match.groups())
+                    await self.t_in(reaction.message.guild,reaction.message.channel,user,f'{m}{s:02}')
         except discord.Forbidden:
             await reaction.message.channel.send("Error: the Bot does not have the manage_messages permission.")
         except Exception as error:
@@ -171,7 +182,8 @@ class Cog(commands.Cog):
             self.future[guild.id].set_result(False)
             self.task[guild.id].cancel()
             self.task[guild.id]=None
-            await ch.send(f"Timer stopped: {dt.seconds//60} min {dt.seconds%60} sec left.")
+            msg=await ch.send(Cog.prefix_s+f" {dt.seconds//60} min {dt.seconds%60} sec left.")
+            await msg.add_reaction('▶️')
             voice_state=author.voice
             if not((not voice_state) or (not voice_state.channel)):
                 flg_self_play=True
