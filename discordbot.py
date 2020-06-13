@@ -46,16 +46,19 @@ class Cog(commands.Cog):
         b'\xe2\x8f\xb8\xef\xb8\x8f'.decode():'pause_button',
         'play':'play',
         'arrow_forward':'play',
-        '▶️':'play'
+        '▶️':'play',
+        'reset':'reset',
+        'arrows_counterclockwise':'reset',
+        '🔄':'reset'
     }
     emoji_list=['1️⃣','2️⃣','3️⃣','4️⃣','6️⃣',
         b'\xe2\x8f\xb8\xef\xb8\x8f'.decode(),
         '📢',
         b'\xf0\x9f\x87\xa6'.decode(),
-        b'\xf0\x9f\x87\xb3'.decode()
+        b'\xf0\x9f\x87\xb3'.decode(),
+        '🔄'
     ]
     timer_name_syn={'A':'Aff','a':'Aff','aff':'Aff','N':'Neg','n':'Neg','neg':'Neg'}
-    timer_def={'Aff':'8','Neg':'8'}
     def __init__(self,bot,bot_id):
         self.bot: commands.Bot=bot
         self.bot_id: int=bot_id
@@ -64,6 +67,7 @@ class Cog(commands.Cog):
         self.future: Dict[int,asyncio.Future]={}
         self.flg_call: Dict[int,bool]={}
         self.loop: Dict[int,asyncio.BaseEventLoop]={}
+        self.timer_def={'Aff':'8','Neg':'8'}
         self.left_time: Dict[int,Dict[int,Dict[str,str]]]={}#g_id->[cat_id->[name->time]]
         self.timer_name: Dict[int,Dict[int,str]]={}#g_id->[cat_id->name(currently running)]
         self.emoji_func={
@@ -75,7 +79,8 @@ class Cog(commands.Cog):
             'regional_indicator_a': lambda g,c,u:self.t_in(g,c,u,'Aff'),
             'regional_indicator_n': lambda g,c,u:self.t_in(g,c,u,'Neg'),
             'loudspeaker': lambda g,c,u:self.t_in(g,c,u,'0','Y',flg_loudspeaker=True),
-            'pause_button': lambda g,c,u:self.s_in(g,c,u)
+            'pause_button': lambda g,c,u:self.s_in(g,c,u),
+            'reset': lambda g,c,u:self.r_in(g.id,c)
         }
 
     async def se(self,guild_id,vc_list,src):
@@ -185,6 +190,33 @@ class Cog(commands.Cog):
     async def l(self,ctx):
         await self.l_in(ctx.guild.id,ctx.channel.category_id)
     
+    async def r_in(self,guild_id,ch,arg_n='',arg_t=''):
+        if not(self.sel_bot(guild_id,ch.category_id,True)): return
+        if not(arg_n):
+            if guild_id in self.left_time: self.left_time[guild_id][ch.category_id]=deepcopy(self.timer_def)
+            else: self.left_time[guild_id]={ch.category_id:deepcopy(self.timer_def)}
+        else:
+            if arg_n in Cog.timer_name_syn: arg_n=Cog.timer_name_syn[arg_n]
+            if re.fullmatch(r'\d+',arg_n):
+                await ch.send('Error: timer name cannot be number.')
+                return
+            if arg_n and arg_t:
+                if not(re.fullmatch(r'\d+',arg_t)):
+                    await ch.send('Error: invalid time input.')
+                    return
+                self.timer_def[arg_n]=arg_t
+            elif not(arg_n in self.timer_def):
+                await ch.send('Error: timer name not found.')
+                return
+            if not(guild_id in self.left_time): self.left_time[guild_id]={ch.category_id:deepcopy(self.timer_def)}
+            elif not(ch.category_id in self.left_time[guild_id]): self.left_time[guild_id][ch.category_id]=deepcopy(self.timer_def)
+            else: self.left_time[guild_id][ch.category_id][arg_n]=self.timer_def[arg_n]
+        
+    @commands.command()
+    @commands.check(check_priv)
+    async def r(self,ctx,arg_n='',arg_t=''):
+        await self.r_in(ctx.guild.id,ctx.channel,arg_n,arg_t)
+
     async def s_in(self,guild,ch,author):
         if not(self.sel_bot(guild.id,ch.category_id)): return
         if guild.id in self.future and self.future[guild.id]:
@@ -240,8 +272,8 @@ class Cog(commands.Cog):
             await ch.send('Error: no time input.')
             return
         if not(arg_t.isdecimal()):
-            if not(guild.id in self.left_time): self.left_time[guild.id]={ch.category_id:deepcopy(Cog.timer_def)}
-            elif not ch.category_id in self.left_time[guild.id]: self.left_time[guild.id][ch.category_id]=deepcopy(Cog.timer_def)
+            if not(guild.id in self.left_time): self.left_time[guild.id]={ch.category_id:deepcopy(self.timer_def)}
+            elif not ch.category_id in self.left_time[guild.id]: self.left_time[guild.id][ch.category_id]=deepcopy(self.timer_def)
             if arg_t in Cog.timer_name_syn:
                 arg_t=Cog.timer_name_syn[arg_t]
             if arg_t in self.left_time[guild.id][ch.category_id]:
