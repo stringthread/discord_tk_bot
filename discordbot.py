@@ -192,8 +192,8 @@ class Cog(commands.Cog):
         if guild_id in self.task and isinstance(self.task[guild_id],asyncio.TimerHandle):
             self.task[guild_id].cancel()
             del self.task[guild_id]
-        if guild_id in self.future and not(self.future[guild_id].done()):
-            self.future[guild_id].set_result(True)
+        if guild_id in self.future:
+            if isinstance(self.future[guild_id],asyncio.Future) and not(self.future[guild_id].done()): self.future[guild_id].set_result(True)
             del self.future[guild_id]
         if guild_id in self.flg_call: del self.flg_call[guild_id]
         self.timer_def=Cog.timer_def_c
