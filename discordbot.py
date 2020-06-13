@@ -268,7 +268,7 @@ class Cog(commands.Cog):
                     self.v_cl[guild.id]=v_cl
                     break
         if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
-            self.v_cl[guild.id]=await voice_state.channel.connect()
+            if flg_vc: self.v_cl[guild.id]=await voice_state.channel.connect()
         else:
             if self.v_cl[guild.id].is_playing(): self.v_cl[guild.id].stop()
             if self.v_cl[guild.id].channel!=voice_state.channel:
