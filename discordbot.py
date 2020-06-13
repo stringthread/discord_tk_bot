@@ -6,6 +6,7 @@ from typing import ClassVar,Dict,List
 import asyncio
 import datetime
 import re
+from copy import deepcopy
 import textwrap
 
 N_BOTS=2
@@ -53,6 +54,8 @@ class Cog(commands.Cog):
         #b'\xf0\x9f\x87\xa6'.decode(),
         #b'\xf0\x9f\x87\xb3'.decode()
     ]
+    timer_name_syn={'A':'Aff','a':'Aff','aff':'Aff','N':'Neg','n':'Neg','neg':'Neg'}
+    timer_def={'Aff':'8','Neg':'8'}
     def __init__(self,bot,bot_id):
         self.bot: commands.Bot=bot
         self.bot_id: int=bot_id
@@ -61,7 +64,8 @@ class Cog(commands.Cog):
         self.future: Dict[int,asyncio.Future]={}
         self.flg_call: Dict[int,bool]={}
         self.loop: Dict[int,asyncio.BaseEventLoop]={}
-        self.left_time: Dict[int,List[int]]={}
+        self.left_time: Dict[int,Dict[int,Dict[str,str]]]={}#g_id->[cat_id->[name->time]]
+        self.timer_name: Dict[int,Dict[int,str]]={}#g_id->[cat_id->name(currently running)]
         self.emoji_func={
             'one': lambda g,c,u:self.t_in(g,c,u,'1'),
             'two': lambda g,c,u:self.t_in(g,c,u,'2'),
@@ -184,10 +188,18 @@ class Cog(commands.Cog):
             if not(guild.id in self.loop) or not(self.loop[guild.id]) or self.loop[guild.id].is_closed():
                 self.loop[guild.id]=asyncio.get_event_loop()
             dt=datetime.timedelta(seconds=self.task[guild.id].when()-self.loop[guild.id].time())
+            name=''
+            if ch.category_id in self.timer_name.get(guild.id,{}):
+                name=self.timer_name[guild.id][ch.category_id]
+                if not(ch.category_id in self.left_time.get(guild.id,{}) and name in self.left_time[guild.id].get(ch.category_id,{})): name=''
+                else:
+                    self.left_time[guild.id][ch.category_id][name]=f'{dt.seconds//60}{dt.seconds%60:02}'
+                del self.timer_name[guild.id][ch.category_id]
+                if name: name=f'__**{name}**__ : '
             self.future[guild.id].set_result(False)
             self.task[guild.id].cancel()
             self.task[guild.id]=None
-            msg=await ch.send(Cog.prefix_s+f" {dt.seconds//60} min {dt.seconds%60} sec left.")
+            msg=await ch.send(Cog.prefix_s+f"\n{name}{dt.seconds//60} min {dt.seconds%60} sec left.")
             await msg.add_reaction('▶️')
             voice_state=author.voice
             if not((not voice_state) or (not voice_state.channel)):
@@ -221,9 +233,18 @@ class Cog(commands.Cog):
 
     async def t_in(self,guild,ch,author,arg_t,arg_b='No',flg_loudspeaker=False):
         if not(self.sel_bot(guild.id,ch.category_id,True)): return
-        if arg_t==None or not(arg_t.isdecimal()):
+        if arg_t==None:
             await ch.send('Error: no time input.')
             return
+        if not(arg_t.isdecimal()):
+            if not(guild.id in self.left_time): self.left_time[guild.id]={ch.category_id:deepcopy(Cog.timer_def)}
+            elif not ch.category_id in self.left_time[guild.id]: self.left_time[guild.id][ch.category_id]=deepcopy(Cog.timer_def)
+            if arg_t in Cog.timer_name_syn:
+                arg_t=Cog.timer_name_syn[arg_t]
+            if arg_t in self.left_time[guild.id][ch.category_id]:
+                if not(guild.id in self.timer_name): self.timer_name[guild.id]={ch.category_id:arg_t}
+                else: self.timer_name[guild.id][ch.category_id]=arg_t
+                arg_t=self.left_time[guild.id][ch.category_id][arg_t]
         if not(arg_t.isdecimal()):
             await ch.send('Error: invalid time.')
             return
@@ -261,7 +282,16 @@ class Cog(commands.Cog):
         self.task[guild.id]=self.loop[guild.id].call_later(dt.total_seconds(),self.future[guild.id].set_result,True)
         result_future=await self.future[guild.id]
         if result_future:
-            if not(flg_loudspeaker): await ch.send('Finished!')    
+            if not(flg_loudspeaker):
+                name=''
+                if ch.category_id in self.timer_name.get(guild.id,{}):
+                    name=self.timer_name[guild.id][ch.category_id]
+                    if not(ch.category_id in self.left_time.get(guild.id,{}) and name in self.left_time[guild.id].get(ch.category_id,{})): name=''
+                    else:
+                        self.left_time[guild.id][ch.category_id][name]='0'
+                    del self.timer_name[guild.id][ch.category_id]
+                    if name: name=f'__**{name}**__ : '
+                await ch.send(f'{name}Finished!')    
             voice_state=author.voice
             if not((not voice_state) or (not voice_state.channel)):
                 flg_self_play=True
