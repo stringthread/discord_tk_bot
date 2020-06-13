@@ -58,6 +58,7 @@ class Cog(commands.Cog):
         b'\xf0\x9f\x87\xb3'.decode(),
         '🔄'
     ]
+    timer_def_c={'Aff':'8','Neg':'8'}
     timer_name_syn={'A':'Aff','a':'Aff','aff':'Aff','N':'Neg','n':'Neg','neg':'Neg'}
     def __init__(self,bot,bot_id):
         self.bot: commands.Bot=bot
@@ -67,7 +68,7 @@ class Cog(commands.Cog):
         self.future: Dict[int,asyncio.Future]={}
         self.flg_call: Dict[int,bool]={}
         self.loop: Dict[int,asyncio.BaseEventLoop]={}
-        self.timer_def={'Aff':'8','Neg':'8'}
+        self.timer_def=deepcopy(Cog.timer_def_c)
         self.left_time: Dict[int,Dict[int,Dict[str,str]]]={}#g_id->[cat_id->[name->time]]
         self.timer_name: Dict[int,Dict[int,str]]={}#g_id->[cat_id->name(currently running)]
         self.emoji_func={
@@ -122,6 +123,12 @@ class Cog(commands.Cog):
             Cog.cat2bot[guild_id][cat_id]=self.bot_id
             Cog.bot2cat[guild_id][self.bot_id]=cat_id
         return True
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self,member,before,after):
+        if not(before.channel): return
+        if not(self.sel_bot(before.channel.guild.id,before.channel.category_id)): return
+        if len(before.channel.members)<=1: await self.l_in(before.channel.guild.id,before.channel.category_id)
 
     @commands.Cog.listener()
     async def on_reaction_add(self,reaction,user):
@@ -182,6 +189,16 @@ class Cog(commands.Cog):
         if guild_id in self.v_cl and self.v_cl[guild_id]:
             await self.v_cl[guild_id].disconnect()
             del self.v_cl[guild_id]
+        if guild_id in self.task and isinstance(self.task[guild_id],asyncio.TimerHandle):
+            self.task[guild_id].cancel()
+            del self.task[guild_id]
+        if guild_id in self.future and not(self.future[guild_id].done()):
+            self.future[guild_id].set_result(True)
+            del self.future[guild_id]
+        if guild_id in self.flg_call: del self.flg_call[guild_id]
+        self.timer_def=Cog.timer_def_c
+        if cat_id in self.left_time.get(guild_id,{}): del self.left_time[guild_id][cat_id]
+        if cat_id in self.timer_name.get(guild_id,{}): del self.timer_name[guild_id][cat_id]
         del Cog.cat2bot[guild_id][Cog.bot2cat[guild_id][self.bot_id]]
         del Cog.bot2cat[guild_id][self.bot_id]
 
@@ -316,6 +333,7 @@ class Cog(commands.Cog):
         self.future[guild.id]=self.loop[guild.id].create_future()
         self.task[guild.id]=self.loop[guild.id].call_later(dt.total_seconds(),self.future[guild.id].set_result,True)
         result_future=await self.future[guild.id]
+        if not(guild.id in self.future) or not(self.future[guild.id]): return
         if result_future:
             if not(flg_loudspeaker):
                 name=''
