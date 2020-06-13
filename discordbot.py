@@ -37,10 +37,10 @@ class Cog(commands.Cog):
         '6️⃣':'six',
         'loudspeaker':'loudspeaker',
         '📢':'loudspeaker',
-        #'regional_indicator_a':'regional_indicator_a',
-        #b'\xf0\x9f\x87\xa6'.decode():'regional_indicator_a',
-        #'regional_indicator_n':'regional_indicator_n',
-        #b'\xf0\x9f\x87\xb3'.decode():'regional_indicator_n',
+        'regional_indicator_a':'regional_indicator_a',
+        b'\xf0\x9f\x87\xa6'.decode():'regional_indicator_a',
+        'regional_indicator_n':'regional_indicator_n',
+        b'\xf0\x9f\x87\xb3'.decode():'regional_indicator_n',
         'pause_button':'pause_button',
         'double_vertical_bar':'pause_button',
         b'\xe2\x8f\xb8\xef\xb8\x8f'.decode():'pause_button',
@@ -51,8 +51,8 @@ class Cog(commands.Cog):
     emoji_list=['1️⃣','2️⃣','3️⃣','4️⃣','6️⃣',
         b'\xe2\x8f\xb8\xef\xb8\x8f'.decode(),
         '📢',
-        #b'\xf0\x9f\x87\xa6'.decode(),
-        #b'\xf0\x9f\x87\xb3'.decode()
+        b'\xf0\x9f\x87\xa6'.decode(),
+        b'\xf0\x9f\x87\xb3'.decode()
     ]
     timer_name_syn={'A':'Aff','a':'Aff','aff':'Aff','N':'Neg','n':'Neg','neg':'Neg'}
     timer_def={'Aff':'8','Neg':'8'}
@@ -72,8 +72,8 @@ class Cog(commands.Cog):
             'three': lambda g,c,u:self.t_in(g,c,u,'3'),
             'four': lambda g,c,u:self.t_in(g,c,u,'4'),
             'six': lambda g,c,u:self.t_in(g,c,u,'6'),
-            #'regional_indicator_a': lambda g,c,u:self.t_in(g,c,u,self.left_time[g.id][0]),
-            #'regional_indicator_n': lambda g,c,u:self.t_in(g,c,u,self.left_time[g.id][1]),
+            'regional_indicator_a': lambda g,c,u:self.t_in(g,c,u,'Aff'),
+            'regional_indicator_n': lambda g,c,u:self.t_in(g,c,u,'Neg'),
             'loudspeaker': lambda g,c,u:self.t_in(g,c,u,'0','Y',flg_loudspeaker=True),
             'pause_button': lambda g,c,u:self.s_in(g,c,u)
         }
@@ -134,11 +134,11 @@ class Cog(commands.Cog):
             elif reaction.message.content.startswith(Cog.prefix_s):
                 e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
                 if e_name in Cog.emoji_syn and Cog.emoji_syn[e_name]=='play':
-                    match=re.search(r'(\d+) *min *(\d+) *sec',reaction.message.content)
+                    match=re.search(r'(m:^(?:__\*\*([^/d ]+)\*\*__ ?: ?)?(\d+) ?min ?(\d+) ?sec)',reaction.message.content)
                     if match==None: return
-                    m,s=map(int,match.groups())
+                    n,m,s=map(int,match.groups())
                     await reaction.remove(user)
-                    await self.t_in(reaction.message.guild,reaction.message.channel,user,f'{m}{s:02}')
+                    await self.t_in(reaction.message.guild,reaction.message.channel,user,self.timer_def.get(n,f'{m}{s:02}'))
         except discord.Forbidden:
             await reaction.message.channel.send("Error: the Bot does not have the manage_messages permission.")
         except Exception as error:
