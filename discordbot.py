@@ -134,11 +134,14 @@ class Cog(commands.Cog):
             elif reaction.message.content.startswith(Cog.prefix_s):
                 e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
                 if e_name in Cog.emoji_syn and Cog.emoji_syn[e_name]=='play':
-                    match=re.search(r'(m:^(?:__\*\*([^/d ]+)\*\*__ ?: ?)?(\d+) ?min ?(\d+) ?sec)',reaction.message.content)
+                    match=re.search(r'(?m:^(?:__\*\*([^/d ]+)\*\*__ ?: ?)?(\d+) ?min ?(\d+) ?sec)',reaction.message.content)
                     if match==None: return
-                    n,m,s=map(int,match.groups())
+                    n=match.group(1)
+                    m=int(match.group(2))
+                    s=int(match.group(3))
+                    if n in Cog.timer_name_syn: n=Cog.timer_name_syn[n]
                     await reaction.remove(user)
-                    await self.t_in(reaction.message.guild,reaction.message.channel,user,self.timer_def.get(n,f'{m}{s:02}'))
+                    await self.t_in(reaction.message.guild,reaction.message.channel,user,n if n else f'{m}{s:02}')
         except discord.Forbidden:
             await reaction.message.channel.send("Error: the Bot does not have the manage_messages permission.")
         except Exception as error:
