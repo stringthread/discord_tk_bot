@@ -333,6 +333,7 @@ class Cog(commands.Cog):
         self.future[guild.id]=self.loop[guild.id].create_future()
         self.task[guild.id]=self.loop[guild.id].call_later(dt.total_seconds(),self.future[guild.id].set_result,True)
         result_future=await self.future[guild.id]
+        if not(guild.id in self.future) or not(self.future[guild.id]): return
         if result_future:
             if not(flg_loudspeaker):
                 name=''
