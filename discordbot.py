@@ -128,7 +128,9 @@ class Cog(commands.Cog):
     async def on_voice_state_update(self,member,before,after):
         if not(before.channel): return
         if not(self.sel_bot(before.channel.guild.id,before.channel.category_id)): return
-        if len(before.channel.members)<=1: await self.l_in(before.channel.guild.id,before.channel.category_id)
+        if not(filter(lambda x:x.id==self.bot.user.id,before.channel.members)): return
+        if after.channel and not(filter(lambda x:x.id==self.bot.user.id,after.channel.members)): return
+        if len(after.channel.members)==1 and after.channel.members[0].id==self.bot.user.id: await self.l_in(before.channel.guild.id,before.channel.category_id)
 
     @commands.Cog.listener()
     async def on_reaction_add(self,reaction,user):
