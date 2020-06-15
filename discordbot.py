@@ -186,6 +186,11 @@ class Cog(commands.Cog):
 
     async def l_in(self,guild_id,cat_id):
         if not(self.sel_bot(guild_id,cat_id)): return
+        if not(guild_id in self.v_cl) or self.v_cl[guild_id]==None or not(self.v_cl[guild_id].is_connected()):
+            for v_cl in self.bot.voice_clients:
+                if v_cl.guild.id==guild_id:
+                    self.v_cl[guild_id]=v_cl
+                    break
         if guild_id in self.v_cl and self.v_cl[guild_id]:
             await self.v_cl[guild_id].disconnect()
             del self.v_cl[guild_id]
