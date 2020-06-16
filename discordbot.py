@@ -128,7 +128,15 @@ class Cog(commands.Cog):
     async def on_voice_state_update(self,member,before,after):
         if not(before.channel): return
         if not(self.sel_bot(before.channel.guild.id,before.channel.category_id)): return
-        if len(before.channel.members)<=1: await self.l_in(before.channel.guild.id,before.channel.category_id)
+        if member.id==self.bot.user.id: return
+        if after.channel and after.channel.category_id==before.channel.category_id: return
+        cat=self.bot.get_channel(before.channel.category_id)
+        if not(isinstance(cat,discord.CategoryChannel)): return
+        flg=True
+        for ch in cat.voice_channels:
+            if len(ch.members)>=2: flg=False;break
+            if len(ch.members)==1 and ch.members[0].id!=self.bot.user.id: flg=False;break
+        if flg: await self.l_in(before.channel.guild.id,before.channel.category_id)
 
     @commands.Cog.listener()
     async def on_reaction_add(self,reaction,user):
@@ -186,14 +194,19 @@ class Cog(commands.Cog):
 
     async def l_in(self,guild_id,cat_id):
         if not(self.sel_bot(guild_id,cat_id)): return
+        if not(guild_id in self.v_cl) or self.v_cl[guild_id]==None or not(self.v_cl[guild_id].is_connected()):
+            for v_cl in self.bot.voice_clients:
+                if v_cl.guild.id==guild_id:
+                    self.v_cl[guild_id]=v_cl
+                    break
         if guild_id in self.v_cl and self.v_cl[guild_id]:
             await self.v_cl[guild_id].disconnect()
             del self.v_cl[guild_id]
         if guild_id in self.task and isinstance(self.task[guild_id],asyncio.TimerHandle):
             self.task[guild_id].cancel()
             del self.task[guild_id]
-        if guild_id in self.future and not(self.future[guild_id].done()):
-            self.future[guild_id].set_result(True)
+        if guild_id in self.future:
+            if isinstance(self.future[guild_id],asyncio.Future) and not(self.future[guild_id].done()): self.future[guild_id].set_result(True)
             del self.future[guild_id]
         if guild_id in self.flg_call: del self.flg_call[guild_id]
         self.timer_def=Cog.timer_def_c
