@@ -23,6 +23,7 @@ class Cog(commands.Cog):
     cat2bot: ClassVar[Dict[int,Dict[int,int]]]={} #Guild_id->[Category_id->Bot id]
     bot2cat: ClassVar[Dict[int,Dict[int,int]]]={} #Guild_id->[Bot_id->Category_id] (Can use for checking if bot is used)
     prefix_ui: str='>Discord TK Bot UI:'
+    prefix_ui_flex: str=prefix_ui+': Flex'
     prefix_s: str='Timer stopped:'
     emoji_syn={
         'one':'one',
@@ -60,6 +61,7 @@ class Cog(commands.Cog):
     ]
     timer_def_c={'Aff':'8','Neg':'8'}
     timer_name_syn={'A':'Aff','a':'Aff','aff':'Aff','N':'Neg','n':'Neg','neg':'Neg'}
+    ch_name_syn={'aff':'aff','neg':'neg','Aff':'aff','Neg':'neg','-Aff':'aff','-Neg':'neg'}
     def __init__(self,bot,bot_id):
         self.bot: commands.Bot=bot
         self.bot_id: int=bot_id
@@ -71,7 +73,7 @@ class Cog(commands.Cog):
         self.timer_def=deepcopy(Cog.timer_def_c)
         self.left_time: Dict[int,Dict[int,Dict[str,str]]]={}#g_id->[cat_id->[name->time]]
         self.timer_name: Dict[int,Dict[int,str]]={}#g_id->[cat_id->name(currently running)]
-        self.emoji_func={
+        self.emoji_func_jda={
             'one': lambda g,c,u:self.t_in(g,c,u,'1'),
             'two': lambda g,c,u:self.t_in(g,c,u,'2'),
             'three': lambda g,c,u:self.t_in(g,c,u,'3'),
@@ -83,26 +85,45 @@ class Cog(commands.Cog):
             'pause_button': lambda g,c,u:self.s_in(g,c,u),
             'reset': lambda g,c,u:self.r_in(g.id,c)
         }
+        self.emoji_func_dk={
+          'one': lambda g,c,u:self.t_in(g,c,u,'1'),
+            'two': lambda g,c,u:self.t_in(g,c,u,'2'),
+            'three': lambda g,c,u:self.t_in(g,c,u,'3'),
+            'four': lambda g,c,u:self.t_in(g,c,u,'4'),
+            'six': lambda g,c,u:self.t_in(g,c,u,'6'),
+            'regional_indicator_a': lambda g,c,u:self.e_in(g,c,'Aff'),
+            'regional_indicator_n': lambda g,c,u:self.e_in(g,c,'Neg'),
+            'loudspeaker': lambda g,c,u:self.t_in(g,c,u,'0','Y',flg_loudspeaker=True),
+            'pause_button': lambda g,c,u:self.s_in(g,c,u),
+            'reset': lambda g,c,u:self.r_in(g.id,c)
+        }
+
+    async def call(self,guild_id,ch,src,flg_back=True):
+      ch_before=None
+      if flg_back and guild_id in self.v_cl and self.v_cl[guild_id]!=None: ch_before=self.v_cl[guild_id].channel
+      if not(guild_id in self.v_cl) or self.v_cl[guild_id]==None or not(self.v_cl[guild_id].is_connected()):
+          for v_cl in self.bot.voice_clients:
+              if v_cl.guild.id==guild_id:
+                  self.v_cl[guild_id]=v_cl
+                  break
+      if not(guild_id in self.v_cl) or self.v_cl[guild_id]==None or not(self.v_cl[guild_id].is_connected()):
+          self.v_cl[guild_id]=await ch.connect()
+      else:
+          if self.v_cl[guild_id].is_playing(): self.v_cl[guild_id].stop()
+          await self.v_cl[guild_id].move_to(ch)
+      if not(guild_id in self.loop) or not(self.loop[guild_id]) or self.loop[guild_id].is_closed():
+          self.loop[guild_id]=asyncio.get_event_loop()
+      future=self.loop[guild_id].create_future()
+      self.v_cl[guild_id].play(discord.FFmpegPCMAudio(src),after=lambda err:future.set_result(0))
+      await future
+      if flg_back and ch_before!=None:
+          await self.v_cl[guild_id].move_to(ch_before)
 
     async def se(self,guild_id,vc_list,src):
         ch_before=None
         if guild_id in self.v_cl and self.v_cl[guild_id]!=None: ch_before=self.v_cl[guild_id].channel
         for ch in vc_list:
-            if not(guild_id in self.v_cl) or self.v_cl[guild_id]==None or not(self.v_cl[guild_id].is_connected()):
-                for v_cl in self.bot.voice_clients:
-                    if v_cl.guild.id==guild_id:
-                        self.v_cl[guild_id]=v_cl
-                        break
-            if not(guild_id in self.v_cl) or self.v_cl[guild_id]==None or not(self.v_cl[guild_id].is_connected()):
-                self.v_cl[guild_id]=await ch.connect()
-            else:
-                if self.v_cl[guild_id].is_playing(): self.v_cl[guild_id].stop()
-                await self.v_cl[guild_id].move_to(ch)
-            if not(guild_id in self.loop) or not(self.loop[guild_id]) or self.loop[guild_id].is_closed():
-                self.loop[guild_id]=asyncio.get_event_loop()
-            future=self.loop[guild_id].create_future()
-            self.v_cl[guild_id].play(discord.FFmpegPCMAudio(src),after=lambda err:future.set_result(0))
-            await future
+            await self.call(guild_id,ch,src,flg_back=False)
         if ch_before!=None:
             await self.v_cl[guild_id].move_to(ch_before)
 
@@ -143,14 +164,22 @@ class Cog(commands.Cog):
         try:
             if not(self.sel_bot(reaction.message.guild.id,reaction.message.channel.category_id)): return
             if not(check_priv_user(user)) or user.bot: return
-            if reaction.message.content.startswith(Cog.prefix_ui):
+            if reaction.message.content.startswith(Cog.prefix_ui_flex):
                 e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
-                if not(e_name in Cog.emoji_syn and self.emoji_func[Cog.emoji_syn[e_name]]):
+                if not(e_name in Cog.emoji_syn and self.emoji_func_jda[Cog.emoji_syn[e_name]]):
                     #await reaction.message.channel.send(e_name.encode())
                     return
                 #await reaction.message.channel.send(Cog.emoji_syn[e_name])
                 await reaction.remove(user)
-                await self.emoji_func[Cog.emoji_syn[e_name]](reaction.message.guild,reaction.message.channel,user)
+                await self.emoji_func_jda[Cog.emoji_syn[e_name]](reaction.message.guild,reaction.message.channel,user)
+            elif reaction.message.content.startswith(Cog.prefix_ui):
+                e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
+                if not(e_name in Cog.emoji_syn and self.emoji_func_dk[Cog.emoji_syn[e_name]]):
+                    #await reaction.message.channel.send(e_name.encode())
+                    return
+                #await reaction.message.channel.send(Cog.emoji_syn[e_name])
+                await reaction.remove(user)
+                await self.emoji_func_dk[Cog.emoji_syn[e_name]](reaction.message.guild,reaction.message.channel,user)
             elif reaction.message.content.startswith(Cog.prefix_s):
                 e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
                 if e_name in Cog.emoji_syn and Cog.emoji_syn[e_name]=='play':
@@ -183,10 +212,25 @@ class Cog(commands.Cog):
     @commands.check(check_priv)
     async def c(self,ctx):
         if not(self.sel_bot(ctx.guild.id,ctx.channel.category_id,True)): return
+        content=Cog.prefix_ui_flex+textwrap.dedent('''
+        :one:～:six:：タイマー開始
+        :pause_button:：タイマー停止
+        :loudspeaker:：準備室の呼び出し
+        :regional_indicator_a::regional_indicator_n:：準備時間タイマー開始
+        ''')
+        msg=await ctx.send(content)
+        for i in Cog.emoji_list:
+            await msg.add_reaction(i)
+
+    @commands.command()
+    @commands.check(check_priv)
+    async def d(self,ctx):
+        if not(self.sel_bot(ctx.guild.id,ctx.channel.category_id,True)): return
         content=Cog.prefix_ui+textwrap.dedent('''
         :one:～:six:：タイマー開始
         :pause_button:：タイマー停止
         :loudspeaker:：準備室の呼び出し
+        :regional_indicator_a: :regional_indicator_n:：資料請求呼び出し
         ''')
         msg=await ctx.send(content)
         for i in Cog.emoji_list:
@@ -247,6 +291,19 @@ class Cog(commands.Cog):
     async def r(self,ctx,arg_n='',arg_t=''):
         await self.r_in(ctx.guild.id,ctx.channel,arg_n,arg_t)
 
+    async def e_in(self,guild,cat_id,arg):
+      if not(self.sel_bot(guild.id,cat_id)): return
+      cat=self.bot.get_channel(cat_id)
+      if not(isinstance(cat,discord.CategoryChannel)): return
+      for ch in cat.voice_channels:
+        if arg in ch.name:
+          await self.call(guild.id,ch,"audio/evi.wav")
+
+    @commands.command()
+    @commands.check(check_priv)
+    async def e(self,ctx,arg):
+      await self.e_in(ctx.guild,ctx.channel.category_id,arg)
+
     async def s_in(self,guild,ch,author):
         if not(self.sel_bot(guild.id,ch.category_id)): return
         if guild.id in self.future and self.future[guild.id]:
@@ -274,20 +331,9 @@ class Cog(commands.Cog):
                     if cat!=None:
                         vc_list=cat.voice_channels
                         flg_self_play=False
-                        await self.se(guild.id,vc_list,"audio/fin.mp3")
+                        await self.se(guild.id,vc_list,"audio/fin.wav")
                 if flg_self_play:
-                    if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
-                        for v_cl in self.bot.voice_clients:
-                            if v_cl.guild.id==guild.id:
-                                self.v_cl[guild.id]=v_cl
-                                break
-                    if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
-                        self.v_cl[guild.id]=await voice_state.channel.connect()
-                    else:
-                        if self.v_cl[guild.id].is_playing(): self.v_cl[guild.id].stop()
-                        if self.v_cl[guild.id].channel!=voice_state.channel:
-                            await self.v_cl[guild.id].move_to(voice_state.channel)
-                    self.v_cl[guild.id].play(discord.FFmpegPCMAudio("audio/fin.mp3"))
+                    await self.call(guild.id,voice_state.channel,"audio/fin.wav")
         else:
             await ch.send("Timer is not running.")
 
@@ -340,7 +386,7 @@ class Cog(commands.Cog):
                 await self.v_cl[guild.id].move_to(voice_state.channel)
         if not(flg_loudspeaker):
             if guild.id in self.v_cl and self.v_cl[guild.id].is_connected():
-                self.v_cl[guild.id].play(discord.FFmpegPCMAudio("audio/start.mp3"))
+                self.v_cl[guild.id].play(discord.FFmpegPCMAudio("audio/start.wav"))
             await ch.send(f"Timer set: {dt.seconds//60} min {dt.seconds%60} sec.")
         self.loop[guild.id]=asyncio.get_event_loop()
         self.future[guild.id]=self.loop[guild.id].create_future()
@@ -367,20 +413,9 @@ class Cog(commands.Cog):
                         vc_list=cat.voice_channels
                         if flg_loudspeaker: vc_list=list(filter(lambda vc:vc!=voice_state.channel,vc_list))
                         flg_self_play=False
-                        await self.se(guild.id,vc_list,"audio/fin.mp3")
+                        await self.se(guild.id,vc_list,"audio/fin.wav")
                 if flg_self_play:
-                    if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
-                        for v_cl in self.bot.voice_clients:
-                            if v_cl.guild.id==guild.id:
-                                self.v_cl[guild.id]=v_cl
-                                break
-                    if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
-                        self.v_cl[guild.id]=await voice_state.channel.connect()
-                    else:
-                        if self.v_cl[guild.id].is_playing(): self.v_cl[guild.id].stop()
-                        if self.v_cl[guild.id].channel!=voice_state.channel:
-                            await self.v_cl[guild.id].move_to(voice_state.channel)
-                    self.v_cl[guild.id].play(discord.FFmpegPCMAudio("audio/fin.mp3"))
+                    await self.call(guild.id,voice_state.channel,"audio/fin.wav")
         if self.future[guild.id]: self.future[guild.id]=None
         if self.task[guild.id]: self.task[guild.id]=None
 
