@@ -90,8 +90,8 @@ class Cog(commands.Cog):
       'three': lambda g,c,u:self.t_in(g,c,u,'3'),
       'four': lambda g,c,u:self.t_in(g,c,u,'4'),
       'six': lambda g,c,u:self.t_in(g,c,u,'6'),
-      'regional_indicator_a': lambda g,c,u:self.e_in(g,c,'aff'),
-      'regional_indicator_n': lambda g,c,u:self.e_in(g,c,'neg'),
+      'regional_indicator_a': lambda g,c,u:self.e_in(g,c.category_id,'aff'),
+      'regional_indicator_n': lambda g,c,u:self.e_in(g,c.category_id,'neg'),
       'loudspeaker': lambda g,c,u:self.t_in(g,c,u,'0','Y',flg_loudspeaker=True),
       'pause_button': lambda g,c,u:self.s_in(g,c,u),
       'reset': lambda g,c,u:self.r_in(g.id,c)
@@ -291,7 +291,7 @@ class Cog(commands.Cog):
     await self.r_in(ctx.guild.id,ctx.channel,arg_n,arg_t)
 
   async def e_in(self,guild,cat_id,arg):
-    if not(self.sel_bot(guild.id,cat_id)): return
+    if not(self.sel_bot(guild.id,cat_id,True)): return
     cat=self.bot.get_channel(cat_id)
     vc_list=getattr(cat,'voice_channels',None)
     if not(vc_list): return
