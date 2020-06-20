@@ -425,8 +425,9 @@ class Cog(commands.Cog):
             await self.se(guild.id,vc_list,"audio/fin.wav")
         if flg_self_play:
           await self.call(guild.id,voice_state.channel,"audio/fin.wav")
-    if self.future[guild.id]: self.future[guild.id]=None
-    if self.task[guild.id]: self.task[guild.id]=None
+    if not(flg_loudspeaker):
+      if self.future[guild.id]: self.future[guild.id]=None
+      if self.task[guild.id]: self.task[guild.id]=None
 
   @commands.command()
   @commands.check(check_priv)
