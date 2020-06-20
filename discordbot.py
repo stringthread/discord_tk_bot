@@ -17,7 +17,9 @@ async def check_priv(ctx):
   return check_priv_user(ctx.author)
 
 def check_priv_user(user):
-  return True
+  for i in user.roles:
+    if i.name=='JUDGE': return True
+  return False
 
 class Cog(commands.Cog):
   cat2bot: ClassVar[Dict[int,Dict[int,int]]]={} #Guild_id->[Category_id->Bot id]
