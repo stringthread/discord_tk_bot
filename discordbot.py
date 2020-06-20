@@ -207,6 +207,9 @@ class Cog(commands.Cog):
 
   @commands.Cog.listener()
   async def on_command_error(self,ctx, error):
+    if isinstance(error,commands.CheckFailure):
+      if self.sel_bot(ctx.guild.id,ctx.channel.category_id,True): await ctx.send(f"{ctx.author.name}: You don't have permission to use this bot.")
+      return
     orig_error = getattr(error, "original", error)
     error_msg = ''.join(traceback.TracebackException.from_exception(orig_error).format())
     #await ctx.send(error_msg)
