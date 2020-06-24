@@ -70,6 +70,8 @@ class Cog(commands.Cog):
     self.v_cl: Dict[int,discord.VoiceClient]={}
     self.task: Dict[int,asyncio.Task]={}
     self.future: Dict[int,asyncio.Future]={}
+    self.task_msg: Dict[int,asyncio.Task]={}
+    self.future_msg: Dict[int,asyncio.Future]={}
     self.flg_call: Dict[int,bool]={}
     self.loop: Dict[int,asyncio.BaseEventLoop]={}
     self.timer_def=deepcopy(Cog.timer_def_c)
@@ -260,6 +262,12 @@ class Cog(commands.Cog):
     if guild_id in self.future:
       if isinstance(self.future[guild_id],asyncio.Future) and not(self.future[guild_id].done()): self.future[guild_id].set_result(True)
       del self.future[guild_id]
+    if guild_id in self.task_msg and isinstance(self.task_msg[guild_id],asyncio.TimerHandle):
+      self.task_msg[guild_id].cancel()
+      del self.task_msg[guild_id]
+    if guild_id in self.future_msg:
+      if isinstance(self.future_msg[guild_id],asyncio.Future) and not(self.future_msg[guild_id].done()): self.future_msg[guild_id].set_result(True)
+      del self.future_msg[guild_id]
     if guild_id in self.flg_call: del self.flg_call[guild_id]
     self.timer_def=Cog.timer_def_c
     if cat_id in self.left_time.get(guild_id,{}): del self.left_time[guild_id][cat_id]
@@ -330,6 +338,10 @@ class Cog(commands.Cog):
       self.future[guild.id].set_result(False)
       self.task[guild.id].cancel()
       self.task[guild.id]=None
+      self.future_msg[guild.id].set_result(False)
+      self.future_msg[guild.id]=None
+      self.task_msg[guild.id].cancel()
+      self.task_msg[guild.id]=None
       msg=await ch.send(Cog.prefix_s+f"\n{name}{dt.seconds//60} min {dt.seconds%60} sec left.")
       await msg.add_reaction('▶️')
       voice_state=author.voice
@@ -350,6 +362,32 @@ class Cog(commands.Cog):
   @commands.check(check_priv)
   async def s(self,ctx):
     await self.s_in(ctx.guild,ctx.channel,ctx.author)
+
+  async def time_msg(self,guild_id,ch):
+    if not(self.sel_bot(guild_id,ch.category_id)): return
+    if not(guild_id in self.loop) or not(self.loop[guild_id]) or self.loop[guild_id].is_closed():
+      self.loop[guild_id]=asyncio.get_event_loop()
+    if not(guild_id in self.future_msg and self.future_msg[guild_id]):
+        self.future_msg[guild_id]=self.loop[guild_id].create_future()
+    if not(guild_id in self.task_msg and self.task_msg[guild_id]):
+        self.task_msg[guild_id]=self.loop[guild_id].call_later(10,self.future_msg[guild_id].set_result,True)
+    result=await self.future_msg[guild_id]
+    if not(result): return
+    if guild_id in self.future_msg and self.future_msg[guild_id]:
+      dt=datetime.timedelta(seconds=self.task[guild_id].when()-self.loop[guild_id].time())
+      if dt.seconds>10:
+        self.future_msg[guild_id]=self.loop[guild_id].create_future()
+        self.task_msg[guild_id]=self.loop[guild_id].call_later(10,self.future_msg[guild_id].set_result,True)
+      name=''
+      if ch.category_id in self.timer_name.get(guild_id,{}):
+        name=self.timer_name[guild_id][ch.category_id]
+        if not(ch.category_id in self.left_time.get(guild_id,{}) and name in self.left_time[guild_id].get(ch.category_id,{})): name=''
+        else:
+          self.left_time[guild_id][ch.category_id][name]=f'{dt.seconds//60}{dt.seconds%60:02}'
+        del self.timer_name[guild_id][ch.category_id]
+        if name: name=f'__**{name}**__ : '
+      await ch.send(f"Timer Running: {name}{dt.seconds//60} min {dt.seconds%60} sec left.")
+      if dt.seconds>10: asyncio.create_task(self.time_msg(guild_id,ch))
 
   async def t_in(self,guild,ch,author,arg_t,arg_b='No',flg_loudspeaker=False):
     if not(self.sel_bot(guild.id,ch.category_id,True)): return
@@ -405,6 +443,7 @@ class Cog(commands.Cog):
       self.loop[guild.id]=asyncio.get_event_loop()
       self.future[guild.id]=self.loop[guild.id].create_future()
       self.task[guild.id]=self.loop[guild.id].call_later(dt.total_seconds(),self.future[guild.id].set_result,True)
+      await self.time_msg(guild.id,ch)
       result_future=await self.future[guild.id]
       if not(guild.id in self.future) or not(self.future[guild.id]): return
     if flg_loudspeaker or result_future:
