@@ -427,7 +427,7 @@ class Cog(commands.Cog):
           if v_cl.guild.id==guild.id:
             self.v_cl[guild.id]=v_cl
             await ch.send('test:1')
-            break
+            #break
     if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
       if flg_vc:
         await ch.send('test:2')
