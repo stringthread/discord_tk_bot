@@ -426,23 +426,23 @@ class Cog(commands.Cog):
         for v_cl in self.bot.voice_clients:
           if v_cl.guild.id==guild.id:
             self.v_cl[guild.id]=v_cl
-            ch.send('test:1')
+            await ch.send('test:1')
             break
     if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
       if flg_vc:
-        ch.send('test:2')
+        await ch.send('test:2')
         self.fut_connect[guild.id]=asyncio.get_event_loop().create_future()
         self.v_cl[guild.id]=await voice_state.channel.connect()
         if guild.id in self.fut_connect and self.fut_connect[guild.id]: self.fut_connect[guild.id].set_result(True)
     else:
-      ch.send('test:3')
+      await ch.send('test:3')
       if self.v_cl[guild.id].is_playing(): self.v_cl[guild.id].stop()
       if self.v_cl[guild.id].channel!=voice_state.channel:
         await self.v_cl[guild.id].move_to(voice_state.channel)
-    ch.send('test:4& '+str(flg_loudspeaker))
+    await ch.send('test:4& '+str(flg_loudspeaker))
     if not(flg_loudspeaker):
       if guild.id in self.v_cl and self.v_cl[guild.id].is_connected():
-        ch.send('test:5')
+        await ch.send('test:5')
         self.v_cl[guild.id].play(discord.FFmpegPCMAudio("audio/start.wav"))
       await ch.send(f"Timer set: {dt.seconds//60} min {dt.seconds%60} sec.")
       self.loop[guild.id]=asyncio.get_event_loop()
