@@ -6,6 +6,7 @@ from typing import ClassVar,Dict,List
 import asyncio
 import datetime
 import re
+from random import random
 from copy import deepcopy
 import textwrap
 
@@ -237,6 +238,21 @@ class Cog(commands.Cog):
     #await ctx.send(error_msg)
     await ctx.send(f"{datetime.datetime.now()}: Error occured. Please check system logs and contact the developper.")
     print(error_msg)
+
+  @commands.command()
+  @commands.check(check_priv)
+  async def an(self,ctx,n1,n2=''):
+    if not(self.sel_bot(ctx.guild.id,ctx.channel.category_id,True)): return
+    if not n1:
+      await ctx.send('Error: no name input')
+      return
+    if random()<0.5: n1,n2=n2,n1
+    msg=''
+    if n1: msg+=f'Aff：{n1}'
+    if n2:
+      if msg: msg+='\n'
+      msg+=f'Neg：{n2}'
+    await ctx.send(msg)
 
   @commands.command()
   @commands.check(check_priv)
