@@ -52,14 +52,30 @@ class Cog(commands.Cog):
     '▶️':'play',
     'reset':'reset',
     'arrows_counterclockwise':'reset',
-    '🔄':'reset'
+    '🔄':'reset',
+    'check':'check',
+    'white_check_mark':'check',
+    '✅':'check',
+    'leave':'leave',
+    'wave':'leave',
+    '👋':'leave'
   }
-  emoji_list=['1️⃣','2️⃣','3️⃣','4️⃣','6️⃣',
+  emoji_list_c=['1️⃣','2️⃣','3️⃣','4️⃣','6️⃣',
     b'\xe2\x8f\xb8\xef\xb8\x8f'.decode(),
-    '📢',
+    #'📢',
+    '✅',
     b'\xf0\x9f\x87\xa6'.decode(),
     b'\xf0\x9f\x87\xb3'.decode(),
-    '🔄'
+    '🔄',
+    '👋'
+  ]
+  emoji_list_d=['1️⃣','2️⃣','3️⃣','4️⃣','6️⃣',
+    b'\xe2\x8f\xb8\xef\xb8\x8f'.decode(),
+    #'📢',
+    '✅',
+    #b'\xf0\x9f\x87\xa6'.decode(),
+    #b'\xf0\x9f\x87\xb3'.decode(),
+    '👋'
   ]
   timer_def_c={'Aff':'8','Neg':'8'}
   timer_name_syn={'A':'Aff','a':'Aff','aff':'Aff','N':'Neg','n':'Neg','neg':'Neg'}
@@ -83,11 +99,13 @@ class Cog(commands.Cog):
       'three': lambda g,c,u:self.t_in(g,c,u,'3'),
       'four': lambda g,c,u:self.t_in(g,c,u,'4'),
       'six': lambda g,c,u:self.t_in(g,c,u,'6'),
-      'regional_indicator_a': lambda g,c,u:self.e_in(g,c.category_id,'Aff'),
-      'regional_indicator_n': lambda g,c,u:self._in(g,c.category_id,'Neg'),
+      'regional_indicator_a': lambda g,c,u:self.t_in(g,c,u,'Aff'),
+      'regional_indicator_n': lambda g,c,u:self.t_in(g,c,u,'Neg'),
       'loudspeaker': lambda g,c,u:self.t_in(g,c,u,'0','Y',flg_loudspeaker=True),
       'pause_button': lambda g,c,u:self.s_in(g,c,u),
-      'reset': lambda g,c,u:self.r_in(g.id,c)
+      'reset': lambda g,c,u:self.r_in(g.id,c),
+      'check': lambda g,c,u:self.time_msg(g.id,c),
+      'leave': lambda g,c,u:self.l_in(g.id,c.category_id)
     }
     self.emoji_func_dk={
       'one': lambda g,c,u:self.t_in(g,c,u,'1'),
@@ -99,7 +117,9 @@ class Cog(commands.Cog):
       'regional_indicator_n': lambda g,c,u:self.e_in(g,c.category_id,'neg'),
       'loudspeaker': lambda g,c,u:self.t_in(g,c,u,'0','Y',flg_loudspeaker=True),
       'pause_button': lambda g,c,u:self.s_in(g,c,u),
-      'reset': lambda g,c,u:self.r_in(g.id,c)
+      'reset': lambda g,c,u:self.r_in(g.id,c),
+      'check': lambda g,c,u:self.time_msg(g.id,c),
+      'leave': lambda g,c,u:self.l_in(g.id,c.category_id)
     }
 
   async def call(self,guild_id,ch,src,flg_back=True):
@@ -222,14 +242,18 @@ class Cog(commands.Cog):
   @commands.check(check_priv)
   async def c(self,ctx):
     if not(self.sel_bot(ctx.guild.id,ctx.channel.category_id,True)): return
-    content=Cog.prefix_ui_flex+textwrap.dedent('''
+    content=(Cog.prefix_ui_flex+textwrap.dedent('''
     :one:～:six:：タイマー開始
     :pause_button:：タイマー停止
-    :loudspeaker:：準備室の呼び出し
+    :white_check_mark:：残り時間チェック''')
+    #:loudspeaker:：準備室の呼び出し
+    +textwrap.dedent('''
     :regional_indicator_a::regional_indicator_n:：準備時間タイマー開始
-    ''')
+    :arrows_counterclockwise:：準備時間タイマーリセット
+    :wave:：Botの退出
+    '''))
     msg=await ctx.send(content)
-    for i in Cog.emoji_list:
+    for i in Cog.emoji_list_c:
       await msg.add_reaction(i)
 
   @commands.command()
@@ -239,11 +263,14 @@ class Cog(commands.Cog):
     content=Cog.prefix_ui+textwrap.dedent('''
     :one:～:six:：タイマー開始
     :pause_button:：タイマー停止
-    :loudspeaker:：準備室の呼び出し
-    :regional_indicator_a: :regional_indicator_n:：資料請求呼び出し
+    :white_check_mark:：残り時間チェック
+    :wave:：Botの退出
     ''')
+    #:loudspeaker:：準備室の呼び出し
+    #:regional_indicator_a: :regional_indicator_n:：資料請求呼び出し
+    #''')
     msg=await ctx.send(content)
-    for i in Cog.emoji_list:
+    for i in Cog.emoji_list_d:
       await msg.add_reaction(i)
 
   async def l_in(self,guild_id,cat_id):
@@ -338,10 +365,10 @@ class Cog(commands.Cog):
       self.future[guild.id].set_result(False)
       self.task[guild.id].cancel()
       self.task[guild.id]=None
-      self.future_msg[guild.id].set_result(False)
-      self.future_msg[guild.id]=None
-      self.task_msg[guild.id].cancel()
-      self.task_msg[guild.id]=None
+      #self.future_msg[guild.id].set_result(False)
+      #self.future_msg[guild.id]=None
+      #self.task_msg[guild.id].cancel()
+      #self.task_msg[guild.id]=None
       msg=await ch.send(Cog.prefix_s+f"\n{name}{dt.seconds//60} min {dt.seconds%60} sec left.")
       await msg.add_reaction('▶️')
       voice_state=author.voice
@@ -365,29 +392,26 @@ class Cog(commands.Cog):
 
   async def time_msg(self,guild_id,ch):
     if not(self.sel_bot(guild_id,ch.category_id)): return
+    if not(guild_id in self.task and self.task[guild_id]):
+      await ch.send("Timer is not running.")
+      return
     if not(guild_id in self.loop) or not(self.loop[guild_id]) or self.loop[guild_id].is_closed():
       self.loop[guild_id]=asyncio.get_event_loop()
-    if not(guild_id in self.future_msg and self.future_msg[guild_id]):
-        self.future_msg[guild_id]=self.loop[guild_id].create_future()
-    if not(guild_id in self.task_msg and self.task_msg[guild_id]):
-        self.task_msg[guild_id]=self.loop[guild_id].call_later(10,self.future_msg[guild_id].set_result,True)
-    result=await self.future_msg[guild_id]
-    if not(result): return
-    if guild_id in self.future_msg and self.future_msg[guild_id]:
-      dt=datetime.timedelta(seconds=self.task[guild_id].when()-self.loop[guild_id].time())
-      if dt.seconds>10:
-        self.future_msg[guild_id]=self.loop[guild_id].create_future()
-        self.task_msg[guild_id]=self.loop[guild_id].call_later(10,self.future_msg[guild_id].set_result,True)
-      name=''
-      if ch.category_id in self.timer_name.get(guild_id,{}):
-        name=self.timer_name[guild_id][ch.category_id]
-        if not(ch.category_id in self.left_time.get(guild_id,{}) and name in self.left_time[guild_id].get(ch.category_id,{})): name=''
-        else:
-          self.left_time[guild_id][ch.category_id][name]=f'{dt.seconds//60}{dt.seconds%60:02}'
-        del self.timer_name[guild_id][ch.category_id]
-        if name: name=f'__**{name}**__ : '
-      await ch.send(f"Timer Running: {name}{dt.seconds//60} min {dt.seconds%60} sec left.")
-      if dt.seconds>10: asyncio.create_task(self.time_msg(guild_id,ch))
+    #if not(guild_id in self.future_msg and self.future_msg[guild_id]):
+    #    self.future_msg[guild_id]=self.loop[guild_id].create_future()
+    #if not(guild_id in self.task_msg and self.task_msg[guild_id]):
+    #    self.task_msg[guild_id]=self.loop[guild_id].call_later(10,self.future_msg[guild_id].set_result,True)
+    #result=await self.future_msg[guild_id]
+    #if not(result): return
+    #if guild_id in self.future_msg and self.future_msg[guild_id]:
+    dt=datetime.timedelta(seconds=self.task[guild_id].when()-self.loop[guild_id].time())
+    #if dt.seconds>10:
+    #  self.future_msg[guild_id]=self.loop[guild_id].create_future()
+    #  self.task_msg[guild_id]=self.loop[guild_id].call_later(10,self.future_msg[guild_id].set_result,True)
+    name=''
+    if ch.category_id in self.timer_name.get(guild_id,{}): name=f'\n__**{self.timer_name[guild_id][ch.category_id]}**__ : '
+    await ch.send(f"Timer Running: {name}{(dt.seconds+1)//60} min {(dt.seconds+1)%60:02} sec left.")
+    #if dt.seconds>10: asyncio.create_task(self.time_msg(guild_id,ch))
 
   async def t_in(self,guild,ch,author,arg_t,arg_b='No',flg_loudspeaker=False):
     if not(self.sel_bot(guild.id,ch.category_id,True)): return
@@ -448,7 +472,7 @@ class Cog(commands.Cog):
       self.loop[guild.id]=asyncio.get_event_loop()
       self.future[guild.id]=self.loop[guild.id].create_future()
       self.task[guild.id]=self.loop[guild.id].call_later(dt.total_seconds(),self.future[guild.id].set_result,True)
-      await self.time_msg(guild.id,ch)
+      #await self.time_msg(guild.id,ch)
       result_future=await self.future[guild.id]
       if not(guild.id in self.future) or not(self.future[guild.id]): return
     if flg_loudspeaker or result_future:
