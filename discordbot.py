@@ -281,8 +281,8 @@ class Cog(commands.Cog):
   @commands.check(check_priv)
   async def c(self,ctx):
     if not(self.sel_bot(ctx.guild.id,ctx.channel.category_id,True)): return
-    content=(Cog.prefix_ui_flex+textwrap.dedent('''
-    :one:～:six:：タイマー開始
+    content=(Cog.prefix_ui_flex+textwrap.dedent(f'''
+    {Cog.emoji_point_five[ctx.guild.id] if ctx.guild.id in Cog.emoji_point_five else ':one:'}～:six:：タイマー開始
     :pause_button:：タイマー停止
     :white_check_mark:：残り時間チェック''')
     #:loudspeaker:：準備室の呼び出し
@@ -292,7 +292,7 @@ class Cog(commands.Cog):
     :wave:：Botの退出
     '''))
     msg=await ctx.send(content)
-    await msg.add_reaction(Cog.emoji_point_five[ctx.guild.id])
+    if ctx.guild.id in Cog.emoji_point_five :await msg.add_reaction(Cog.emoji_point_five[ctx.guild.id])
     for i in Cog.emoji_list_c:
       await msg.add_reaction(i)
 
@@ -300,8 +300,8 @@ class Cog(commands.Cog):
   @commands.check(check_priv)
   async def d(self,ctx):
     if not(self.sel_bot(ctx.guild.id,ctx.channel.category_id,True)): return
-    content=Cog.prefix_ui+textwrap.dedent('''
-    :one:～:six:：タイマー開始
+    content=Cog.prefix_ui+textwrap.dedent(f'''
+    {Cog.emoji_point_five[ctx.guild.id] if ctx.guild.id in Cog.emoji_point_five else ':one:'}～:six:：タイマー開始
     :pause_button:：タイマー停止
     :white_check_mark:：残り時間チェック
     :wave:：Botの退出
@@ -310,7 +310,7 @@ class Cog(commands.Cog):
     #:regional_indicator_a: :regional_indicator_n:：資料請求呼び出し
     #''')
     msg=await ctx.send(content)
-    await msg.add_reaction(Cog.emoji_point_five[ctx.guild.id])
+    if ctx.guild.id in Cog.emoji_point_five :await msg.add_reaction(Cog.emoji_point_five[ctx.guild.id])
     for i in Cog.emoji_list_d:
       await msg.add_reaction(i)
 
