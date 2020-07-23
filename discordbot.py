@@ -10,7 +10,7 @@ from random import random
 from copy import deepcopy
 import textwrap
 
-N_BOTS=2
+N_BOTS=int(os.environ['N_BOTS'])
 bot = [commands.Bot(command_prefix='!') for i in range(N_BOTS)]
 token = [os.environ['DISCORD_BOT_TOKEN_'+str(i)] for i in range(1,N_BOTS+1)]
 
@@ -28,6 +28,7 @@ class Cog(commands.Cog):
   prefix_ui: str='>Discord TK Bot UI:'
   prefix_ui_flex: str=prefix_ui+': Flex'
   prefix_s: str='Timer stopped:'
+  emoji_point_five: ClassVar[Dict[int,str]]={}
   emoji_syn={
     'one':'one',
     '1️⃣':'one',
@@ -59,7 +60,8 @@ class Cog(commands.Cog):
     '✅':'check',
     'leave':'leave',
     'wave':'leave',
-    '👋':'leave'
+    '👋':'leave',
+    'point_five':'point_five'
   }
   emoji_list_c=['1️⃣','2️⃣','3️⃣','4️⃣','6️⃣',
     b'\xe2\x8f\xb8\xef\xb8\x8f'.decode(),
@@ -95,6 +97,7 @@ class Cog(commands.Cog):
     self.left_time: Dict[int,Dict[int,Dict[str,str]]]={}#g_id->[cat_id->[name->time]]
     self.timer_name: Dict[int,Dict[int,str]]={}#g_id->[cat_id->name(currently running)]
     self.emoji_func_jda={
+      'point_five': lambda g,c,u:self.t_in(g,c,u,'030'),
       'one': lambda g,c,u:self.t_in(g,c,u,'1'),
       'two': lambda g,c,u:self.t_in(g,c,u,'2'),
       'three': lambda g,c,u:self.t_in(g,c,u,'3'),
@@ -109,6 +112,7 @@ class Cog(commands.Cog):
       'leave': lambda g,c,u:self.l_in(g.id,c.category_id)
     }
     self.emoji_func_dk={
+      'point_five': lambda g,c,u:self.t_in(g,c,u,'030'),
       'one': lambda g,c,u:self.t_in(g,c,u,'1'),
       'two': lambda g,c,u:self.t_in(g,c,u,'2'),
       'three': lambda g,c,u:self.t_in(g,c,u,'3'),
@@ -174,6 +178,25 @@ class Cog(commands.Cog):
     return True
 
   @commands.Cog.listener()
+  async def on_ready(self):
+    for guild in self.bot.guilds:
+      if guild.id in Cog.emoji_point_five: return
+      emoji_id=discord.utils.get(guild.emojis, name='point_five')
+      if emoji_id:Cog.emoji_point_five[guild.id]=emoji_id
+  @commands.Cog.listener()
+  async def on_guild_emojis_update(self,guild,before,after):
+    emoji_id=discord.utils.get(guild.emojis, name='point_five')
+    if emoji_id and not(guild.id in Cog.emoji_point_five):Cog.emoji_point_five[guild.id]=emoji_id
+  @commands.Cog.listener()
+  async def on_guild_available(self,guild):
+    if guild.id in Cog.emoji_point_five: return
+    emoji_id=discord.utils.get(guild.emojis, name='point_five')
+    if emoji_id:Cog.emoji_point_five[guild.id]=emoji_id
+  @commands.Cog.listener()
+  async def on_guild_unavailable(self,guild):
+    if guild.id in Cog.emoji_point_five: del Cog.emoji_point_five[guild.id]
+
+  @commands.Cog.listener()
   async def on_voice_state_update(self,member,before,after):
     if not(before.channel): return
     if not(self.sel_bot(before.channel.guild.id,before.channel.category_id)): return
@@ -193,9 +216,9 @@ class Cog(commands.Cog):
       if not(self.sel_bot(reaction.message.guild.id,reaction.message.channel.category_id)): return
       if not(check_priv_user(user)) or user.bot: return
       if reaction.message.content.startswith(Cog.prefix_ui_flex):
-        e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
+        e_name=re.match(r':?([^:]+):?',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
         if not(e_name in Cog.emoji_syn and self.emoji_func_jda[Cog.emoji_syn[e_name]]):
-          #await reaction.message.channel.send(e_name.encode())
+          #await reaction.message.channel.send(e_name)
           return
         #await reaction.message.channel.send(Cog.emoji_syn[e_name])
         await reaction.remove(user)
@@ -269,6 +292,7 @@ class Cog(commands.Cog):
     :wave:：Botの退出
     '''))
     msg=await ctx.send(content)
+    await msg.add_reaction(Cog.emoji_point_five[ctx.guild.id])
     for i in Cog.emoji_list_c:
       await msg.add_reaction(i)
 
@@ -286,6 +310,7 @@ class Cog(commands.Cog):
     #:regional_indicator_a: :regional_indicator_n:：資料請求呼び出し
     #''')
     msg=await ctx.send(content)
+    await msg.add_reaction(Cog.emoji_point_five[ctx.guild.id])
     for i in Cog.emoji_list_d:
       await msg.add_reaction(i)
 
