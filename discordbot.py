@@ -187,6 +187,7 @@ class Cog(commands.Cog):
   async def on_guild_emojis_update(self,guild,before,after):
     emoji_id=discord.utils.get(guild.emojis, name='point_five')
     if emoji_id and not(guild.id in Cog.emoji_point_five):Cog.emoji_point_five[guild.id]=emoji_id
+    elif not(emoji_id) and guild.id in Cog.emoji_point_five: del Cog.emoji_point_five[guild.id]
   @commands.Cog.listener()
   async def on_guild_available(self,guild):
     if guild.id in Cog.emoji_point_five: return
