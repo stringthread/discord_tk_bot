@@ -249,7 +249,7 @@ class Cog(commands.Cog):
       orig_error = getattr(error, "original", error)
       error_msg = ''.join(traceback.TracebackException.from_exception(orig_error).format())
       #await reaction.message.channel.send(error_msg)
-      await reaction.message.channel.send(f"{datetime.datetime.now()}: Error occured. Please check system logs and contact the developper.")
+      await reaction.message.channel.send(f"{datetime.datetime.now()}: Error occured. Please check system logs and contact the developer.")
       print(error_msg)
 
   @commands.Cog.listener()
@@ -257,10 +257,12 @@ class Cog(commands.Cog):
     if isinstance(error,commands.CheckFailure):
       if self.sel_bot(ctx.guild.id,ctx.channel.category_id,True): await ctx.send(f"{ctx.author.name}: You don't have permission to use this bot.")
       return
+    if isinstance(error,commands.CommandNotFound):
+      return
     orig_error = getattr(error, "original", error)
     error_msg = ''.join(traceback.TracebackException.from_exception(orig_error).format())
     #await ctx.send(error_msg)
-    await ctx.send(f"{datetime.datetime.now()}: Error occured. Please check system logs and contact the developper.")
+    await ctx.send(f"{datetime.datetime.now()}: Error occured. Please check system logs and contact the developer.")
     print(error_msg)
 
   @commands.command()
@@ -512,6 +514,9 @@ class Cog(commands.Cog):
       #await self.time_msg(guild.id,ch)
       result_future=await self.future[guild.id]
       if not(guild.id in self.future) or not(self.future[guild.id]): return
+    if not(flg_loudspeaker):
+      if self.future[guild.id]: self.future[guild.id]=None
+      if self.task[guild.id]: self.task[guild.id]=None
     if flg_loudspeaker or result_future:
       if not(flg_loudspeaker):
         name=''
@@ -535,9 +540,6 @@ class Cog(commands.Cog):
             await self.se(guild.id,vc_list,"audio/fin.wav")
         if flg_self_play:
           await self.call(guild.id,voice_state.channel,"audio/fin.wav")
-    if not(flg_loudspeaker):
-      if self.future[guild.id]: self.future[guild.id]=None
-      if self.task[guild.id]: self.task[guild.id]=None
 
   @commands.command()
   @commands.check(check_priv)
