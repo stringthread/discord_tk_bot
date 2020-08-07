@@ -25,8 +25,9 @@ def check_priv_user(user):
 class Cog(commands.Cog):
   cat2bot: ClassVar[Dict[int,Dict[int,int]]]={} #Guild_id->[Category_id->Bot id]
   bot2cat: ClassVar[Dict[int,Dict[int,int]]]={} #Guild_id->[Bot_id->Category_id] (Can use for checking if bot is used)
+  prefix_ui_everyone: str=' (Everyone)'
   prefix_ui: str='>Discord TK Bot UI:'
-  prefix_ui_flex: str=prefix_ui+': Flex'
+  prefix_ui_flex: str=prefix_ui+' Flex'
   prefix_s: str='Timer stopped:'
   emoji_point_five: ClassVar[Dict[int,str]]={}
   emoji_syn={
@@ -215,8 +216,10 @@ class Cog(commands.Cog):
   async def on_reaction_add(self,reaction,user):
     try:
       if not(self.sel_bot(reaction.message.guild.id,reaction.message.channel.category_id)): return
-      if not(check_priv_user(user)) or user.bot: return
-      if reaction.message.content.startswith(Cog.prefix_ui_flex):
+      prefix=reaction.message.content.splitlines()[0]
+      if (not(prefix.endswith(Cog.prefix_ui_everyone)) and not(check_priv_user(user))) or user.bot: return
+      if prefix.startswith(Cog.prefix_ui_everyone): re.sub(Cog.prefix_ui_everyone+'$','',prefix)#prefix.replace(Cog.prefix_ui_everyone,'',1)
+      if prefix.startswith(Cog.prefix_ui_flex):
         e_name=re.match(r':?([^:]+):?',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
         if not(e_name in Cog.emoji_syn and self.emoji_func_jda[Cog.emoji_syn[e_name]]):
           #await reaction.message.channel.send(e_name)
@@ -224,7 +227,7 @@ class Cog(commands.Cog):
         #await reaction.message.channel.send(Cog.emoji_syn[e_name])
         await reaction.remove(user)
         await self.emoji_func_jda[Cog.emoji_syn[e_name]](reaction.message.guild,reaction.message.channel,user)
-      elif reaction.message.content.startswith(Cog.prefix_ui):
+      elif prefix.startswith(Cog.prefix_ui):
         e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
         if not(e_name in Cog.emoji_syn and self.emoji_func_dk[Cog.emoji_syn[e_name]]):
           #await reaction.message.channel.send(e_name.encode())
@@ -232,7 +235,7 @@ class Cog(commands.Cog):
         #await reaction.message.channel.send(Cog.emoji_syn[e_name])
         await reaction.remove(user)
         await self.emoji_func_dk[Cog.emoji_syn[e_name]](reaction.message.guild,reaction.message.channel,user)
-      elif reaction.message.content.startswith(Cog.prefix_s):
+      elif prefix.startswith(Cog.prefix_s):
         e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
         if e_name in Cog.emoji_syn and Cog.emoji_syn[e_name]=='play':
           match=re.search(r'(?m:^(?:__\*\*([^/d ]+)\*\*__ ?: ?)?(\d+) ?min ?(\d+) ?sec)',reaction.message.content)
@@ -280,11 +283,9 @@ class Cog(commands.Cog):
       msg+=f'Neg：{n2}'
     await ctx.send(msg)
 
-  @commands.command()
-  @commands.check(check_priv)
-  async def c(self,ctx):
+  async def c_in(self,ctx,pre=''):
     if not(self.sel_bot(ctx.guild.id,ctx.channel.category_id,True)): return
-    content=(Cog.prefix_ui_flex+textwrap.dedent(f'''
+    content=(Cog.prefix_ui_flex+pre+textwrap.dedent(f'''
     {Cog.emoji_point_five[ctx.guild.id] if ctx.guild.id in Cog.emoji_point_five else ':one:'}～:six:：タイマー開始
     :pause_button:：タイマー停止
     :white_check_mark:：残り時間チェック''')
@@ -301,9 +302,16 @@ class Cog(commands.Cog):
 
   @commands.command()
   @commands.check(check_priv)
-  async def d(self,ctx):
+  async def c(self,ctx):
+    await self.c_in(ctx)
+    
+  @commands.command()
+  async def pc(self,ctx):
+    await self.c_in(ctx,Cog.prefix_ui_everyone)
+
+  async def d_in(self,ctx,pre=''):
     if not(self.sel_bot(ctx.guild.id,ctx.channel.category_id,True)): return
-    content=Cog.prefix_ui+textwrap.dedent(f'''
+    content=Cog.prefix_ui+pre+textwrap.dedent(f'''
     {Cog.emoji_point_five[ctx.guild.id] if ctx.guild.id in Cog.emoji_point_five else ':one:'}～:six:：タイマー開始
     :pause_button:：タイマー停止
     :white_check_mark:：残り時間チェック
@@ -316,6 +324,15 @@ class Cog(commands.Cog):
     if ctx.guild.id in Cog.emoji_point_five :await msg.add_reaction(Cog.emoji_point_five[ctx.guild.id])
     for i in Cog.emoji_list_d:
       await msg.add_reaction(i)
+
+  @commands.command()
+  @commands.check(check_priv)
+  async def d(self,ctx):
+    await self.d_in(ctx)
+
+  @commands.command()
+  async def p(self,ctx):
+    await self.d_in(ctx,Cog.prefix_ui_everyone)
 
   async def l_in(self,guild_id,cat_id):
     if not(self.sel_bot(guild_id,cat_id)): return
