@@ -128,6 +128,15 @@ class Cog(commands.Cog):
       'leave': lambda g,c,u:self.l_in(g.id,c.category_id)
     }
 
+  @staticmethod
+  async def send(sendable,content,flg_del=True):
+    if not(getattr(sendable,'send',False)): return
+    msg=await sendable.send(content)
+    if flg_del:
+      loop=asyncio.get_event_loop()
+      loop.create_task(msg.delete(delay=15*60))
+    return msg
+
   async def call(self,guild_id,ch,src,flg_back=True):
     ch_before=None
     if flg_back and guild_id in self.v_cl and self.v_cl[guild_id]!=None: ch_before=self.v_cl[guild_id].channel
@@ -222,17 +231,17 @@ class Cog(commands.Cog):
       if prefix.startswith(Cog.prefix_ui_flex):
         e_name=re.match(r':?([^:]+):?',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
         if not(e_name in Cog.emoji_syn and self.emoji_func_jda[Cog.emoji_syn[e_name]]):
-          #await reaction.message.channel.send(e_name)
+          #await Cog.send(reaction.message.channel,e_name)
           return
-        #await reaction.message.channel.send(Cog.emoji_syn[e_name])
+        #await Cog.send(reaction.message.channel,Cog.emoji_syn[e_name])
         await reaction.remove(user)
         await self.emoji_func_jda[Cog.emoji_syn[e_name]](reaction.message.guild,reaction.message.channel,user)
       elif prefix.startswith(Cog.prefix_ui):
         e_name=re.match(r'^:?([^:]+):?$',reaction.emoji if isinstance(reaction.emoji,str) else reaction.emoji.name).group(1)
         if not(e_name in Cog.emoji_syn and self.emoji_func_dk[Cog.emoji_syn[e_name]]):
-          #await reaction.message.channel.send(e_name.encode())
+          #await Cog.send(reaction.message.channel,e_name.encode())
           return
-        #await reaction.message.channel.send(Cog.emoji_syn[e_name])
+        #await Cog.send(reaction.message.channel,Cog.emoji_syn[e_name])
         await reaction.remove(user)
         await self.emoji_func_dk[Cog.emoji_syn[e_name]](reaction.message.guild,reaction.message.channel,user)
       elif prefix.startswith(Cog.prefix_s):
@@ -247,25 +256,25 @@ class Cog(commands.Cog):
           await reaction.remove(user)
           await self.t_in(reaction.message.guild,reaction.message.channel,user,n if n else f'{m}{s:02}')
     except discord.Forbidden:
-      await reaction.message.channel.send("Error: the Bot does not have the manage_messages permission.")
+      await Cog.send(reaction.message.channel,"Error: the Bot does not have the manage_messages permission.")
     except Exception as error:
       orig_error = getattr(error, "original", error)
       error_msg = ''.join(traceback.TracebackException.from_exception(orig_error).format())
-      #await reaction.message.channel.send(error_msg)
-      await reaction.message.channel.send(f"{datetime.datetime.now()}: Error occured. Please check system logs and contact the developer.")
+      #await Cog.send(reaction.message.channel,error_msg)
+      await Cog.send(reaction.message.channel,f"{datetime.datetime.now()}: Error occured. Please check system logs and contact the developer.")
       print(error_msg)
 
   @commands.Cog.listener()
   async def on_command_error(self,ctx, error):
     if isinstance(error,commands.CheckFailure):
-      if self.sel_bot(ctx.guild.id,ctx.channel.category_id,True): await ctx.send(f"{ctx.author.name}: You don't have permission to use this bot.")
+      if self.sel_bot(ctx.guild.id,ctx.channel.category_id,True): await Cog.send(ctx,f"{ctx.author.name}: You don't have permission to use this bot.")
       return
     if isinstance(error,commands.CommandNotFound):
       return
     orig_error = getattr(error, "original", error)
     error_msg = ''.join(traceback.TracebackException.from_exception(orig_error).format())
-    #await ctx.send(error_msg)
-    await ctx.send(f"{datetime.datetime.now()}: Error occured. Please check system logs and contact the developer.")
+    #await Cog.send(ctx,error_msg)
+    await Cog.send(ctx,f"{datetime.datetime.now()}: Error occured. Please check system logs and contact the developer.")
     print(error_msg)
 
   @commands.command()
@@ -273,7 +282,7 @@ class Cog(commands.Cog):
   async def an(self,ctx,n1,n2=''):
     if not(self.sel_bot(ctx.guild.id,ctx.channel.category_id,True)): return
     if not n1:
-      await ctx.send('Error: no name input')
+      await Cog.send(ctx,'Error: no name input')
       return
     if random()<0.5: n1,n2=n2,n1
     msg=''
@@ -281,7 +290,7 @@ class Cog(commands.Cog):
     if n2:
       if msg: msg+='\n'
       msg+=f'Neg：{n2}'
-    await ctx.send(msg)
+    await Cog.send(ctx,msg)
 
   async def c_in(self,ctx,pre=''):
     if not(self.sel_bot(ctx.guild.id,ctx.channel.category_id,True)): return
@@ -295,7 +304,7 @@ class Cog(commands.Cog):
     :arrows_counterclockwise:：準備時間タイマーリセット
     :wave:：Botの退出
     '''))
-    msg=await ctx.send(content)
+    msg=await Cog.send(ctx,content,False)
     if ctx.guild.id in Cog.emoji_point_five :await msg.add_reaction(Cog.emoji_point_five[ctx.guild.id])
     for i in Cog.emoji_list_c:
       await msg.add_reaction(i)
@@ -320,7 +329,7 @@ class Cog(commands.Cog):
     #:loudspeaker:：準備室の呼び出し
     #:regional_indicator_a: :regional_indicator_n:：資料請求呼び出し
     #''')
-    msg=await ctx.send(content)
+    msg=await Cog.send(ctx,content,False)
     if ctx.guild.id in Cog.emoji_point_five :await msg.add_reaction(Cog.emoji_point_five[ctx.guild.id])
     for i in Cog.emoji_list_d:
       await msg.add_reaction(i)
@@ -376,15 +385,15 @@ class Cog(commands.Cog):
     else:
       if arg_n in Cog.timer_name_syn: arg_n=Cog.timer_name_syn[arg_n]
       if re.fullmatch(r'\d+',arg_n):
-        await ch.send('Error: timer name cannot be number.')
+        await Cog.send(ch,'Error: timer name cannot be number.')
         return
       if arg_n and arg_t:
         if not(re.fullmatch(r'\d+',arg_t)):
-          await ch.send('Error: invalid time input.')
+          await Cog.send(ch,'Error: invalid time input.')
           return
         self.timer_def[arg_n]=arg_t
       elif not(arg_n in self.timer_def):
-        await ch.send('Error: timer name not found.')
+        await Cog.send(ch,'Error: timer name not found.')
         return
       if not(guild_id in self.left_time): self.left_time[guild_id]={ch.category_id:deepcopy(self.timer_def)}
       elif not(ch.category_id in self.left_time[guild_id]): self.left_time[guild_id][ch.category_id]=deepcopy(self.timer_def)
@@ -430,7 +439,7 @@ class Cog(commands.Cog):
       #self.future_msg[guild.id]=None
       #self.task_msg[guild.id].cancel()
       #self.task_msg[guild.id]=None
-      msg=await ch.send(Cog.prefix_s+f"\n{name}{dt.seconds//60} min {dt.seconds%60} sec left.")
+      msg=await Cog.send(ch,Cog.prefix_s+f"\n{name}{dt.seconds//60} min {dt.seconds%60} sec left.")
       await msg.add_reaction('▶️')
       voice_state=author.voice
       if not((not voice_state) or (not voice_state.channel)):
@@ -444,7 +453,7 @@ class Cog(commands.Cog):
         if flg_self_play:
           await self.call(guild.id,voice_state.channel,"audio/fin.wav")
     else:
-      await ch.send("Timer is not running.")
+      await Cog.send(ch,"Timer is not running.")
 
   @commands.command()
   @commands.check(check_priv)
@@ -454,7 +463,7 @@ class Cog(commands.Cog):
   async def time_msg(self,guild_id,ch):
     if not(self.sel_bot(guild_id,ch.category_id)): return
     if not(guild_id in self.task and self.task[guild_id]):
-      await ch.send("Timer is not running.")
+      await Cog.send(ch,"Timer is not running.")
       return
     if not(guild_id in self.loop) or not(self.loop[guild_id]) or self.loop[guild_id].is_closed():
       self.loop[guild_id]=asyncio.get_event_loop()
@@ -471,13 +480,13 @@ class Cog(commands.Cog):
     #  self.task_msg[guild_id]=self.loop[guild_id].call_later(10,self.future_msg[guild_id].set_result,True)
     name=''
     if ch.category_id in self.timer_name.get(guild_id,{}): name=f'\n__**{self.timer_name[guild_id][ch.category_id]}**__ : '
-    await ch.send(f"Timer Running: {name}{(dt.seconds+1)//60} min {(dt.seconds+1)%60:02} sec left.")
+    await Cog.send(ch,f"Timer Running: {name}{(dt.seconds+1)//60} min {(dt.seconds+1)%60:02} sec left.")
     #if dt.seconds>10: asyncio.create_task(self.time_msg(guild_id,ch))
 
   async def t_in(self,guild,ch,author,arg_t,arg_b='No',flg_loudspeaker=False):
     if not(self.sel_bot(guild.id,ch.category_id,True)): return
     if arg_t==None:
-      await ch.send('Error: no time input.')
+      await Cog.send(ch,'Error: no time input.')
       return
     if not(arg_t.isdecimal()):
       if not(guild.id in self.left_time): self.left_time[guild.id]={ch.category_id:deepcopy(self.timer_def)}
@@ -489,7 +498,7 @@ class Cog(commands.Cog):
         else: self.timer_name[guild.id][ch.category_id]=arg_t
         arg_t=self.left_time[guild.id][ch.category_id][arg_t]
     if not(arg_t.isdecimal()):
-      await ch.send('Error: invalid time.')
+      await Cog.send(ch,'Error: invalid time.')
       return
     if len(arg_t)>=3:
       dt=datetime.timedelta(minutes=int(arg_t[0:-2]),seconds=int(arg_t[-2:]))
@@ -504,7 +513,7 @@ class Cog(commands.Cog):
     voice_state=author.voice
     flg_vc=not((not voice_state) or (not voice_state.channel))
     if not flg_vc:
-      await ch.send("You have to join a voice channel first.")
+      await Cog.send(ch,"You have to join a voice channel first.")
     else:
       if guild.id in self.fut_connect and not(self.fut_connect[guild.id].done()): await self.fut_connect[guild.id]
       if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
@@ -524,7 +533,7 @@ class Cog(commands.Cog):
     if not(flg_loudspeaker):
       if guild.id in self.v_cl and self.v_cl[guild.id].is_connected():
         self.v_cl[guild.id].play(discord.FFmpegPCMAudio("audio/start.wav"))
-      await ch.send(f"Timer set: {dt.seconds//60} min {dt.seconds%60} sec.")
+      await Cog.send(ch,f"Timer set: {dt.seconds//60} min {dt.seconds%60} sec.")
       self.loop[guild.id]=asyncio.get_event_loop()
       self.future[guild.id]=self.loop[guild.id].create_future()
       self.task[guild.id]=self.loop[guild.id].call_later(dt.total_seconds(),self.future[guild.id].set_result,True)
@@ -544,7 +553,7 @@ class Cog(commands.Cog):
             self.left_time[guild.id][ch.category_id][name]='0'
           del self.timer_name[guild.id][ch.category_id]
           if name: name=f'__**{name}**__ : '
-        await ch.send(f'{name}Finished!')  
+        await Cog.send(ch,f'{name}Finished!')  
       voice_state=author.voice
       if not((not voice_state) or (not voice_state.channel)):
         flg_self_play=True
