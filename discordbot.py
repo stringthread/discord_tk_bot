@@ -290,7 +290,7 @@ class Cog(commands.Cog):
     if n2:
       if msg: msg+='\n'
       msg+=f'Neg：{n2}'
-    await Cog.send(ctx,msg)
+    await Cog.send(ctx,msg,False)
 
   async def c_in(self,ctx,pre=''):
     if not(self.sel_bot(ctx.guild.id,ctx.channel.category_id,True)): return
