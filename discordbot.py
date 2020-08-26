@@ -143,7 +143,7 @@ class Cog(commands.Cog):
     if guild_id in self.fut_connect and not(self.fut_connect[guild_id].done()): await self.fut_connect[guild_id]
     if not(guild_id in self.v_cl) or self.v_cl[guild_id]==None or not(self.v_cl[guild_id].is_connected()):
       for v_cl in self.bot.voice_clients:
-        if v_cl.guild.id==guild_id:
+        if v_cl.guild.id==guild_id and v_cl.is_connected():
           self.v_cl[guild_id]=v_cl
           break
     if not(guild_id in self.v_cl) or self.v_cl[guild_id]==None or not(self.v_cl[guild_id].is_connected()):
@@ -347,7 +347,7 @@ class Cog(commands.Cog):
     if not(self.sel_bot(guild_id,cat_id)): return
     if not(guild_id in self.v_cl) or self.v_cl[guild_id]==None or not(self.v_cl[guild_id].is_connected()):
       for v_cl in self.bot.voice_clients:
-        if v_cl.guild.id==guild_id:
+        if v_cl.guild.id==guild_id and v_cl.is_connected():
           self.v_cl[guild_id]=v_cl
           break
     if guild_id in self.v_cl and self.v_cl[guild_id]:
@@ -518,7 +518,7 @@ class Cog(commands.Cog):
       if guild.id in self.fut_connect and not(self.fut_connect[guild.id].done()): await self.fut_connect[guild.id]
       if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
         for v_cl in self.bot.voice_clients:
-          if v_cl.guild.id==guild.id:
+          if v_cl.guild.id==guild.id and v_cl.is_connected():
             self.v_cl[guild.id]=v_cl
             #break
     if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
