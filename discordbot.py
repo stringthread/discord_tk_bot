@@ -67,7 +67,7 @@ class Cog(commands.Cog):
   }
   emoji_list_c=['1️⃣','2️⃣','3️⃣','4️⃣','6️⃣',
     b'\xe2\x8f\xb8\xef\xb8\x8f'.decode(),
-    #'📢',
+    '📢',
     '✅',
     b'\xf0\x9f\x87\xa6'.decode(),
     b'\xf0\x9f\x87\xb3'.decode(),
@@ -76,10 +76,10 @@ class Cog(commands.Cog):
   ]
   emoji_list_d=['1️⃣','2️⃣','3️⃣','4️⃣','6️⃣',
     b'\xe2\x8f\xb8\xef\xb8\x8f'.decode(),
-    #'📢',
+    '📢',
     '✅',
-    #b'\xf0\x9f\x87\xa6'.decode(),
-    #b'\xf0\x9f\x87\xb3'.decode(),
+    b'\xf0\x9f\x87\xa6'.decode(),
+    b'\xf0\x9f\x87\xb3'.decode(),
     '👋'
   ]
   timer_def_c={'Aff':'8','Neg':'8'}
