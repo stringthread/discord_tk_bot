@@ -9,6 +9,8 @@ import re
 from random import random
 from copy import deepcopy
 import textwrap
+import logging
+logging.basicConfig(level=logging.INFO)
 
 N_BOTS=int(os.environ['N_BOTS'])
 bot = [commands.Bot(command_prefix='!') for i in range(N_BOTS)]
@@ -139,7 +141,9 @@ class Cog(commands.Cog):
 
   async def call(self,guild_id,ch,src,flg_back=True):
     ch_before=None
-    if flg_back and guild_id in self.v_cl and self.v_cl[guild_id]!=None and self.v_cl[guild_id].is_connected(): ch_before=self.v_cl[guild_id].channel
+    if flg_back and guild_id in self.v_cl and self.v_cl[guild_id]!=None and self.v_cl[guild_id].is_connected():
+      ch_before=self.v_cl[guild_id].channel
+      print(ch_before.name)
     if guild_id in self.fut_connect and not(self.fut_connect[guild_id].done()): await self.fut_connect[guild_id]
     if not(guild_id in self.v_cl) or self.v_cl[guild_id]==None or not(self.v_cl[guild_id].is_connected()):
       for v_cl in self.bot.voice_clients:
@@ -156,7 +160,8 @@ class Cog(commands.Cog):
     if not(guild_id in self.loop) or not(self.loop[guild_id]) or self.loop[guild_id].is_closed():
       self.loop[guild_id]=asyncio.get_event_loop()
     future=self.loop[guild_id].create_future()
-    self.v_cl[guild_id].play(discord.FFmpegPCMAudio(src),after=lambda err:future.set_result(0))
+    print('call: play start in '+ch.name)
+    self.v_cl[guild_id].play(discord.FFmpegPCMAudio(src),after=lambda err:print('call: play end') and future.set_result(0))
     await future
     if flg_back and ch_before!=None:
       await self.v_cl[guild_id].move_to(ch_before)
