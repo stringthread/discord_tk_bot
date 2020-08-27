@@ -136,7 +136,7 @@ class Cog(commands.Cog):
       loop.create_task(msg.delete(delay=15*60))
     return msg
 
-  async def call(self,guild_id,ch,src):
+  async def move_ch(self,guild_id,ch):
     if guild_id in self.fut_connect and not(self.fut_connect[guild_id].done()): await self.fut_connect[guild_id]
     if not(guild_id in self.v_cl) or self.v_cl[guild_id]==None or not(self.v_cl[guild_id].is_connected()):
       for v_cl in self.bot.voice_clients:
@@ -151,25 +151,26 @@ class Cog(commands.Cog):
       if self.v_cl[guild_id].is_playing(): self.v_cl[guild_id].stop()
       if self.v_cl[guild_id].channel!=ch:
         self.fut_connect[guild_id]=loop.create_future()
-        print('call: move from '+self.v_cl[guild_id].channel.name+' to '+ch.name)
-        #await self.v_cl[guild_id].move_to(ch)
+        #print('call: move from '+self.v_cl[guild_id].channel.name+' to '+ch.name)
         await self.v_cl[guild_id].disconnect()
-        print('call: disconnect')
         self.v_cl[guild_id]=await ch.connect()
         if guild_id in self.fut_connect and self.fut_connect[guild_id]: self.fut_connect[guild_id].set_result(True)
+
+  async def call(self,guild_id,ch,src):
+    await self.move_ch(guild_id,ch)
     future=loop.create_future()
     self.v_cl[guild_id].play(discord.FFmpegPCMAudio(src),after=lambda err:loop.call_soon_threadsafe(future.set_result,0))
     print('call: connecting to '+self.v_cl[guild_id].channel.name)
     await future
 
   async def se(self,guild_id,vc_list,src):
-    #ch_before=None
-    #if guild_id in self.v_cl and self.v_cl[guild_id]!=None: ch_before=self.v_cl[guild_id].channel
+    ch_before=None
+    if guild_id in self.v_cl and self.v_cl[guild_id]!=None: ch_before=self.v_cl[guild_id].channel
     for ch in vc_list:
       print('se: '+ch.name)
       await self.call(guild_id,ch,src)
-    #if ch_before!=None:
-    #  await self.v_cl[guild_id].move_to(ch_before)
+    if ch_before!=None:
+      await self.move_ch(guild_id,ch_before)
 
   def sel_bot(self,guild_id,cat_id,flg_connect=False):
     if not(guild_id in Cog.cat2bot):
