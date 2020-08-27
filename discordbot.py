@@ -137,9 +137,7 @@ class Cog(commands.Cog):
       loop.create_task(msg.delete(delay=15*60))
     return msg
 
-  async def call(self,guild_id,ch,src,flg_back=True):
-    ch_before=None
-    if flg_back and guild_id in self.v_cl and self.v_cl[guild_id]!=None: ch_before=self.v_cl[guild_id].channel
+  async def call(self,guild_id,ch,src):
     if guild_id in self.fut_connect and not(self.fut_connect[guild_id].done()): await self.fut_connect[guild_id]
     if not(guild_id in self.v_cl) or self.v_cl[guild_id]==None or not(self.v_cl[guild_id].is_connected()):
       for v_cl in self.bot.voice_clients:
@@ -152,20 +150,21 @@ class Cog(commands.Cog):
       if guild_id in self.fut_connect and self.fut_connect[guild_id]: self.fut_connect[guild_id].set_result(True)
     else:
       if self.v_cl[guild_id].is_playing(): self.v_cl[guild_id].stop()
-      await self.v_cl[guild_id].move_to(ch)
+      if self.v_cl[guild_id].channel!=ch:
+        self.fut_connect[guild_id]=asyncio.get_event_loop().create_future()
+        await self.v_cl[guild_id].move_to(ch)
+        if guild_id in self.fut_connect and self.fut_connect[guild_id]: self.fut_connect[guild_id].set_result(True)
     if not(guild_id in self.loop) or not(self.loop[guild_id]) or self.loop[guild_id].is_closed():
       self.loop[guild_id]=asyncio.get_event_loop()
     future=self.loop[guild_id].create_future()
     self.v_cl[guild_id].play(discord.FFmpegPCMAudio(src),after=lambda err:future.set_result(0))
     await future
-    if flg_back and ch_before!=None:
-      await self.v_cl[guild_id].move_to(ch_before)
 
   async def se(self,guild_id,vc_list,src):
     ch_before=None
     if guild_id in self.v_cl and self.v_cl[guild_id]!=None: ch_before=self.v_cl[guild_id].channel
     for ch in vc_list:
-      await self.call(guild_id,ch,src,flg_back=False)
+      await self.call(guild_id,ch,src)
     if ch_before!=None:
       await self.v_cl[guild_id].move_to(ch_before)
 
@@ -411,7 +410,7 @@ class Cog(commands.Cog):
     if not(vc_list): return
     for ch in cat.voice_channels:
       if arg in ch.name:
-        await self.call(guild.id,ch,"audio/evi.wav")
+        await self.se(guild.id,filter(lambda ch: arg in ch.name,cat.voice_channels),"audio/evi.wav")
 
   @commands.command()
   @commands.check(check_priv)
@@ -514,25 +513,9 @@ class Cog(commands.Cog):
     flg_vc=not((not voice_state) or (not voice_state.channel))
     if not flg_vc:
       await Cog.send(ch,"You have to join a voice channel first.")
-    else:
-      if guild.id in self.fut_connect and not(self.fut_connect[guild.id].done()): await self.fut_connect[guild.id]
-      if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
-        for v_cl in self.bot.voice_clients:
-          if v_cl.guild.id==guild.id and v_cl.is_connected():
-            self.v_cl[guild.id]=v_cl
-            #break
-    if not(guild.id in self.v_cl) or self.v_cl[guild.id]==None or not(self.v_cl[guild.id].is_connected()):
-      if flg_vc:
-        self.fut_connect[guild.id]=asyncio.get_event_loop().create_future()
-        self.v_cl[guild.id]=await voice_state.channel.connect()
-        if guild.id in self.fut_connect and self.fut_connect[guild.id]: self.fut_connect[guild.id].set_result(True)
-    else:
-      if self.v_cl[guild.id].is_playing(): self.v_cl[guild.id].stop()
-      if self.v_cl[guild.id].channel!=voice_state.channel:
-        await self.v_cl[guild.id].move_to(voice_state.channel)
     if not(flg_loudspeaker):
-      if guild.id in self.v_cl and self.v_cl[guild.id].is_connected():
-        self.v_cl[guild.id].play(discord.FFmpegPCMAudio("audio/start.wav"))
+      if flg_vc:
+        await self.call(guild.id,voice_state.channel, "audio/start.wav")
       await Cog.send(ch,f"Timer set: {dt.seconds//60} min {dt.seconds%60} sec.")
       self.loop[guild.id]=asyncio.get_event_loop()
       self.future[guild.id]=self.loop[guild.id].create_future()
