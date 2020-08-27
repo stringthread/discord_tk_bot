@@ -139,7 +139,7 @@ class Cog(commands.Cog):
 
   async def call(self,guild_id,ch,src,flg_back=True):
     ch_before=None
-    if flg_back and guild_id in self.v_cl and self.v_cl[guild_id]!=None: ch_before=self.v_cl[guild_id].channel
+    if flg_back and guild_id in self.v_cl and self.v_cl[guild_id]!=None and self.v_cl[guild_id].is_connected(): ch_before=self.v_cl[guild_id].channel
     if guild_id in self.fut_connect and not(self.fut_connect[guild_id].done()): await self.fut_connect[guild_id]
     if not(guild_id in self.v_cl) or self.v_cl[guild_id]==None or not(self.v_cl[guild_id].is_connected()):
       for v_cl in self.bot.voice_clients:
@@ -163,7 +163,7 @@ class Cog(commands.Cog):
 
   async def se(self,guild_id,vc_list,src):
     ch_before=None
-    if guild_id in self.v_cl and self.v_cl[guild_id]!=None: ch_before=self.v_cl[guild_id].channel
+    if guild_id in self.v_cl and self.v_cl[guild_id]!=None and self.v_cl[guild_id].is_connected(): ch_before=self.v_cl[guild_id].channel
     for ch in vc_list:
       await self.call(guild_id,ch,src,flg_back=False)
     if ch_before!=None:
@@ -406,12 +406,15 @@ class Cog(commands.Cog):
 
   async def e_in(self,guild,cat_id,arg):
     if not(self.sel_bot(guild.id,cat_id,True)): return
+    print("e start")
     cat=self.bot.get_channel(cat_id)
     vc_list=getattr(cat,'voice_channels',None)
     if not(vc_list): return
-    for ch in cat.voice_channels:
-      if arg in ch.name:
-        await self.call(guild.id,ch,"audio/evi.wav")
+    #for ch in cat.voice_channels:
+    #  if arg in ch.name:
+    #    await self.call(guild.id,ch,"audio/evi.wav")
+    await self.se(guild.id, list(filter(lambda x: arg in x.name, cat.voice_channels)), "audio/evi.wav")
+    print("e end")
 
   @commands.command()
   @commands.check(check_priv)
