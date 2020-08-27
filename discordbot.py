@@ -160,14 +160,14 @@ class Cog(commands.Cog):
     await self.move_ch(guild_id,ch)
     future=loop.create_future()
     self.v_cl[guild_id].play(discord.FFmpegPCMAudio(src),after=lambda err:loop.call_soon_threadsafe(future.set_result,0))
-    print('call: connecting to '+self.v_cl[guild_id].channel.name)
+    #print('call: connecting to '+self.v_cl[guild_id].channel.name)
     await future
 
   async def se(self,guild_id,vc_list,src):
     ch_before=None
     if guild_id in self.v_cl and self.v_cl[guild_id]!=None: ch_before=self.v_cl[guild_id].channel
     for ch in vc_list:
-      print('se: '+ch.name)
+      #print('se: '+ch.name)
       await self.call(guild_id,ch,src)
     if ch_before!=None:
       await self.move_ch(guild_id,ch_before)
