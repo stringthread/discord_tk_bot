@@ -154,7 +154,7 @@ class Cog(commands.Cog):
         await self.v_cl[guild_id].move_to(ch)
         if guild_id in self.fut_connect and self.fut_connect[guild_id]: self.fut_connect[guild_id].set_result(True)
     future=loop.create_future()
-    self.v_cl[guild_id].play(discord.FFmpegPCMAudio(src),after=lambda err:future.set_result(0))
+    self.v_cl[guild_id].play(discord.FFmpegPCMAudio(src),after=lambda err:loop.call_soon_threadsafe(future.set_result,0))
     await future
 
   async def se(self,guild_id,vc_list,src):
