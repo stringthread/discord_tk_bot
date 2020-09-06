@@ -10,8 +10,6 @@ import re
 from random import random
 from copy import deepcopy
 import textwrap
-from dotenv import load_dotenv
-load_dotenv()
 
 N_BOTS=int(os.environ['N_BOTS'])
 bot = [commands.Bot(command_prefix='!') for i in range(N_BOTS)]
